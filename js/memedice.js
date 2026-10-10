@@ -25,7 +25,8 @@
 })();
 /* 🤖 AI 看圖配梗：縮圖（≤512px、≤200KB JPEG）→ POST /api/meme-caption → 3 組文案 */
 (function () {
-  var top = document.getElementById('top'), bot = document.getElementById('bottom'), dice = document.querySelector('.dice'); if (!top || !dice) return;
+  var top = document.getElementById('top'), bot = document.getElementById('bottom'), dice = document.querySelector('.dice'); if (!top) return;
+  if (!dice) { dice = document.createElement('div'); dice.className = 'f dice'; dice.style.gridColumn = '1/-1'; top.closest('.f').parentNode.insertBefore(dice, top.closest('.f')); }
   var CN = document.documentElement.lang.indexOf('Hans') > 0, FILE = location.protocol === 'file:';
   var box = document.createElement('div'); box.className = 'aicap';
   box.innerHTML = '<button type="button" id="aicap" class="btn secondary"' + (FILE ? ' disabled' : '') + '>🤖 ' + (CN ? 'AI 看图配梗' : 'AI 看圖配梗') + '</button> <small class="note" id="aimsg">'
@@ -49,7 +50,7 @@
     var f = file(); if (!f) { msg.textContent = CN ? '请先选择一张图片。' : '請先選擇一張圖片。'; return; }
     btn.disabled = true; btn.setAttribute('aria-busy', 'true'); chips.innerHTML = ''; msg.textContent = CN ? 'AI 正在看图想梗…（约 3–10 秒）' : 'AI 正在看圖想梗…（約 3–10 秒）';
     try {
-      var img = await shrink(f), r = await fetch((document.body.getAttribute('data-root') || '/') + 'api/meme-caption', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: img, lang: CN ? 'cn' : 'tw' }) });
+      var img = await shrink(f), r = await fetch((document.body.getAttribute('data-root') || '/') + 'api/meme-caption', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: img, lang: document.body.getAttribute('data-ed') || (CN ? 'cn' : 'tw') }) });
       var j = {}; try { j = await r.json(); } catch (e) {}
       if (j.cap) showQ(j.remaining, j.cap);
       if (j.code === 'quota' || j.code === 'ai_quota') { try { localStorage.setItem('aiQuotaDay', tpeDay()); } catch (e) {} quotaOut(); window.__aiErr = QMSG; btn.removeAttribute('aria-busy'); return; }

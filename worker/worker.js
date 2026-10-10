@@ -88,13 +88,13 @@ export class Stats extends DurableObject {
     }
     return { ...this.read(day), counted: false };
   }
-  aiTake(day, cap) { // 原子：今日 AI 用量 +1（未超過上限才計）
-    const k = 'ai:' + day, row = this.sql.exec('SELECT n FROM meta WHERE k = ?', k).toArray()[0], used = row ? row.n : 0;
+  aiTake(day, cap, kind = 'ai') { // 原子：今日 AI 用量 +1（未超過上限才計）
+    const k = kind + ':' + day, row = this.sql.exec('SELECT n FROM meta WHERE k = ?', k).toArray()[0], used = row ? row.n : 0;
     if (used >= cap) return { ok: false, used };
     this.sql.exec('INSERT INTO meta (k, n) VALUES (?, 1) ON CONFLICT(k) DO UPDATE SET n = n + 1', k);
     return { ok: true, used: used + 1 };
   }
-  aiUsed(day) { const r = this.sql.exec('SELECT n FROM meta WHERE k = ?', 'ai:' + day).toArray()[0]; return r ? r.n : 0; }
+  aiUsed(day, kind = 'ai') { const r = this.sql.exec('SELECT n FROM meta WHERE k = ?', kind + ':' + day).toArray()[0]; return r ? r.n : 0; }
   history(limit = 30) { return this.sql.exec('SELECT day, n FROM days ORDER BY day DESC LIMIT ?', limit).toArray(); }
 }
 
@@ -149,9 +149,12 @@ const AI_MODELS = ['@cf/google/gemma-4-26b-a4b-it', '@cf/meta/llama-4-scout-17b-
 const UNSAFE = /色情|做愛|性愛|裸|胸部|奶子|屌|幹你|操你|肏|婊|妓|強姦|强奸|殺人|杀人|自殺|自杀|砍死|炸彈|炸弹|毒品|吸毒|槍|枪|血腥|屍|尸|納粹|纳粹|種族|种族|黑鬼|支那|台獨|台独|共匪|習近平|习近平|川普|特朗普|拜登|蔡英文|賴清德|赖清德|毛澤東|毛泽东|政府|政黨|政党|總統|总统|主席|共產|共产|民進黨|民进党|國民黨|国民党|宗教|阿拉|耶穌|耶稣|fuck|shit|sex|nude|porn|nazi|kill/i;
 const AIMSG = {
   tw: { quota: '今日 AI 額度已用完，明天再來吧！（骰子隨機梗仍可使用）', rate: '太快了，請稍等一分鐘再試', bad: '圖片格式不正確，請重新選擇圖片', fail: 'AI 暫時無法回應，請稍後再試，或先用 🎲 隨機文案', unsafe: '這張圖片無法產生合適的文案，換一張試試' },
+  en: { quota: "Today's AI quota is used up — come back tomorrow! (Random captions still work.)", rate: 'Too fast — please wait a minute.', bad: 'Unsupported image, please pick another one.', fail: 'AI is unavailable right now, please try again later.', unsafe: "Couldn't write suitable captions for this image — try another one." },
   cn: { quota: '今日 AI 额度已用完，明天再来吧！（骰子随机梗仍可使用）', rate: '太快了，请稍等一分钟再试', bad: '图片格式不正确，请重新选择图片', fail: 'AI 暂时无法响应，请稍后再试，或先用 🎲 随机文案', unsafe: '这张图片无法生成合适的文案，换一张试试' }
 };
+const LANGN = { en: 'English', ja: 'Japanese', ko: 'Korean', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian', es: 'Spanish' };
 function aiPrompt(lang) {
+  if (LANGN[lang]) return `You are a witty meme caption writer. Look at this image and write 3 short, funny, family-friendly meme captions in natural, idiomatic ${LANGN[lang]} using everyday internet slang where it fits. Rules: top and bottom lines max 40 characters each; describe only the situation, expressions, animals or objects in the image; never identify or name any real person; no politics, religion, sexual content, violence, discrimination or swearing; no quotes or emoji. Output JSON only: {"captions":[{"top":"...","bottom":"..."},{"top":"...","bottom":"..."},{"top":"...","bottom":"..."}]}`;
   return lang === 'cn'
     ? '你是中国大陆的梗图文案高手。看这张图片，写 3 组简短、好笑、适合所有年龄的梗图文案，使用简体中文和自然的大陆网络用语（例如打工人、摸鱼、破防、内卷、emo、绝绝子等，自然就好）。规则：上方 top 和下方 bottom 各不超过 14 个字；内容只描述图中的情境、表情、动物或物品；不要辨认或说出任何真实人物的姓名或身份；不要涉及政治、宗教、色情、暴力、歧视、脏话；不要使用引号或表情符号。只输出 JSON：{"captions":[{"top":"...","bottom":"..."},{"top":"...","bottom":"..."},{"top":"...","bottom":"..."}]}'
     : '你是台灣的梗圖文案高手。看這張圖片，寫 3 組簡短、好笑、適合所有年齡的梗圖文案，使用繁體中文和自然的台灣口語與網路用語（例如：好累、厭世、下班、我就爛、真的會謝、傻眼貓咪等，自然就好）。規則：上方 top 和下方 bottom 各不超過 14 個字；內容只描述圖中的情境、表情、動物或物品；不要辨認或說出任何真實人物的姓名或身分；不要涉及政治、宗教、色情、暴力、歧視、髒話；不要使用引號或表情符號。只輸出 JSON：{"captions":[{"top":"...","bottom":"..."},{"top":"...","bottom":"..."},{"top":"...","bottom":"..."}]}';
@@ -162,13 +165,13 @@ export function parseCaptions(text) {
   const m = text.match(/\{[\s\S]*\}/); if (!m) return [];
   let o; try { o = JSON.parse(m[0]); } catch (e) { return []; }
   const arr = Array.isArray(o) ? o : (o.captions || []);
-  const clean = s => String(s || '').replace(/[\u0000-\u001f<>"“”「」`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+  const clean = s => String(s || '').replace(/[\u0000-\u001f<>"“”「」`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 48);
   const out = [];
   for (const c of arr) { if (!c) continue; const t = clean(c.top), b = clean(c.bottom); if (!t && !b) continue; if (UNSAFE.test(t + b)) continue; out.push({ top: t, bottom: b }); if (out.length === 3) break; }
   return out;
 }
-async function memeQuota(env) {
-  const cap = Number(env.AI_DAILY_CAP || 500), used = env.STATS ? await env.STATS.get(env.STATS.idFromName('global')).aiUsed(taipeiDay()) : 0;
+async function memeQuota(env, kind = 'ai', cap = Number(env.AI_DAILY_CAP || 500)) {
+  const used = env.STATS ? await env.STATS.get(env.STATS.idFromName('global')).aiUsed(taipeiDay(), kind) : 0;
   return json({ ok: true, cap, used: Math.min(used, cap), remaining: Math.max(0, cap - used) }, 200, { 'cache-control': 'public, max-age=15' });
 }
 async function memeCaption(request, env, ctx) {
@@ -178,7 +181,7 @@ async function memeCaption(request, env, ctx) {
   if (origin && origin !== 'null' && new URL(origin).host !== url.host) return json({ ok: false, error: 'forbidden' }, 403);
   if (Number(request.headers.get('content-length') || 0) > 300000) return json({ ok: false, error: AIMSG.tw.bad, code: 'too_large' }, 413);
   let d; try { d = await request.json(); } catch (e) { return json({ ok: false, error: AIMSG.tw.bad, code: 'bad_request' }, 400); }
-  const lang = d && d.lang === 'cn' ? 'cn' : 'tw', M = AIMSG[lang], img = String((d && d.image) || '');
+  const lang = d && (d.lang === 'cn' || LANGN[d.lang]) ? d.lang : 'tw', M = AIMSG[lang] || AIMSG.en, img = String((d && d.image) || '');
   if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(img) || img.length > 290000) return json({ ok: false, error: M.bad, code: 'bad_image' }, 400);
   const ip = request.headers.get('cf-connecting-ip') || 'local';
   if (env.AI_RL && typeof env.AI_RL.limit === 'function') { try { const { success } = await env.AI_RL.limit({ key: 'ai:' + ip }); if (!success) return json({ ok: false, error: M.rate, code: 'rate_limited' }, 429, { 'retry-after': '60' }); } catch (e) {} }
@@ -209,12 +212,66 @@ async function memeCaption(request, env, ctx) {
   return json({ ok: false, error: M.unsafe, code: 'no_captions' }, 502);
 }
 
+// ---------- 翻譯（Workers AI LLM，明確指定繁體／簡體） ----------
+const TLANG = { auto: 'the detected source language', 'zh-TW': 'Traditional Chinese as used in Taiwan (繁體中文，台灣用語)', 'zh-CN': 'Simplified Chinese as used in mainland China (简体中文)', en: 'English', ja: 'Japanese', ko: 'Korean', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', ru: 'Russian', it: 'Italian', ms: 'Malay', fil: 'Filipino' };
+const TMSG = { quota: { tw: '今日翻譯額度已用完，明天再來吧！', cn: '今日翻译额度已用完，明天再来吧！', x: "Today's translation quota is used up — please come back tomorrow!" }, rate: { tw: '太快了，請稍等一分鐘再試', cn: '太快了，请稍等一分钟再试', x: 'Too many requests — please wait a minute.' }, bad: { tw: '請輸入 1–1000 字的文字', cn: '请输入 1–1000 字的文字', x: 'Please enter 1–1000 characters.' }, fail: { tw: '翻譯暫時無法使用，請稍後再試', cn: '翻译暂时无法使用，请稍后再试', x: 'Translation is unavailable right now, please try again later.' } };
+const tm = (k, ui) => TMSG[k][ui === 'tw' || ui === 'cn' ? ui : 'x'];
+const TCAP = env => Number(env.TRANSLATE_DAILY_CAP || 300);
+async function translate(request, env) {
+  const url = new URL(request.url);
+  if (request.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405, { allow: 'POST' });
+  const origin = request.headers.get('origin');
+  if (origin && origin !== 'null' && new URL(origin).host !== url.host) return json({ ok: false, error: 'forbidden' }, 403);
+  if (Number(request.headers.get('content-length') || 0) > 12000) return json({ ok: false, error: 'too_large' }, 413);
+  let d; try { d = await request.json(); } catch (e) { return json({ ok: false, error: 'bad_request' }, 400); }
+  const ui = String((d && d.ui) || 'tw'), text = String((d && d.text) || '').trim(), src = TLANG[d && d.source] ? d.source : 'auto', tgt = TLANG[d && d.target] && d.target !== 'auto' ? d.target : 'en';
+  if (!text || [...text].length > 1000) return json({ ok: false, error: tm('bad', ui), code: 'bad_text' }, 400);
+  const ip = request.headers.get('cf-connecting-ip') || 'local';
+  if (env.AI_RL && typeof env.AI_RL.limit === 'function') { try { const { success } = await env.AI_RL.limit({ key: 'tr:' + ip }); if (!success) return json({ ok: false, error: tm('rate', ui), code: 'rate_limited' }, 429, { 'retry-after': '60' }); } catch (e) {} }
+  const cap = TCAP(env); let used = 0;
+  if (env.STATS) { const q = await env.STATS.get(env.STATS.idFromName('global')).aiTake(taipeiDay(), cap, 'tr'); used = q.used; if (!q.ok) return json({ ok: false, error: tm('quota', ui), code: 'quota', cap, remaining: 0 }, 429); }
+  const rem = Math.max(0, cap - used);
+  if (String(env.AI_MOCK || '') === 'quota') return json({ ok: false, error: tm('quota', ui), code: 'ai_quota', cap, remaining: 0 }, 429);
+  if (String(env.AI_MOCK || '') === '1') return json({ ok: true, model: 'mock', text: '[' + tgt + '] ' + text, cap, remaining: rem });
+  if (!env.AI) return json({ ok: false, error: tm('fail', ui), code: 'no_binding' }, 503);
+  const sys = `You are a professional translator. Translate the user's text from ${TLANG[src]} into ${TLANG[tgt]}. Keep the meaning, tone, line breaks, numbers, names and formatting. Use natural, idiomatic wording for native readers. Output ONLY the translation — no explanations, no quotes, no notes. If the text is already in the target language, return it with only minimal corrections.`;
+  const t0 = Date.now();
+  for (const model of ['@cf/google/gemma-4-26b-a4b-it', '@cf/meta/llama-4-scout-17b-16e-instruct']) {
+    try {
+      const r = await env.AI.run(model, { messages: [{ role: 'system', content: sys }, { role: 'user', content: text }], max_tokens: 1500, temperature: 0.2, chat_template_kwargs: { enable_thinking: false } });
+      let out = r && (r.response !== undefined ? r.response : (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content));
+      if (typeof out !== 'string') out = out == null ? '' : String(out);
+      out = out.replace(/<think>[\s\S]*?<\/think>/g, '').trim().slice(0, 6000);
+      if (out) return json({ ok: true, model: model.split('/').pop(), ms: Date.now() - t0, text: out, cap, remaining: rem });
+    } catch (e) { console.error('translate error', model, e && e.message); if (QUOTA_ERR.test(String(e && e.message))) return json({ ok: false, error: tm('quota', ui), code: 'ai_quota', cap, remaining: 0 }, 429); }
+  }
+  return json({ ok: false, error: tm('fail', ui), code: 'failed' }, 502);
+}
+
+// ---------- 匯率（open.er-api.com，Cache API 快取 6 小時） ----------
+async function rates(request, env, ctx) {
+  const cache = caches.default, key = new Request('https://jisuanle.com/__rates_cache_v1');
+  let hit = await cache.match(key);
+  if (hit) return new Response(hit.body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=1800', 'x-cache': 'HIT' } });
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD', { cf: { cacheTtl: 21600 } }); const j = await r.json();
+    if (j.result !== 'success') throw new Error('bad source');
+    const body = JSON.stringify({ ok: true, base: 'USD', time: j.time_last_update_unix, source: 'open.er-api.com', rates: j.rates });
+    const resp = new Response(body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=21600' } });
+    ctx && ctx.waitUntil ? ctx.waitUntil(cache.put(key, resp.clone())) : await cache.put(key, resp.clone());
+    return new Response(body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=1800', 'x-cache': 'MISS' } });
+  } catch (e) { return json({ ok: false, error: 'rates_unavailable' }, 502); }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api/feedback') return feedback(request, env);
     if (url.pathname === '/api/stats') return stats(request, env);
     if (url.pathname === '/api/meme-caption/quota') return memeQuota(env);
+    if (url.pathname === '/api/translate/quota') return memeQuota(env, 'tr', TCAP(env));
+    if (url.pathname === '/api/translate') return translate(request, env);
+    if (url.pathname === '/api/rates') return rates(request, env, ctx);
     if (url.pathname === '/api/meme-caption') return memeCaption(request, env, ctx);
     if (url.pathname.startsWith('/api/')) return json({ ok: false, error: 'not_found' }, 404);
     return env.ASSETS.fetch(request); // run_worker_first 只匹配 /api/*，其他路徑通常不會到這裡

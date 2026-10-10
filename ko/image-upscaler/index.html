@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 이미지 업스케일러 — 사진을 2배·4배로 선명하게 무료 확대</title>
+<meta name="description" content="고품질 리샘플링과 샤프닝 또는 브라우저 속 Real-ESRGAN AI로 이미지를 2~4배 확대합니다.">
+<link rel="canonical" href="https://jisuanle.com/ko/image-upscaler/">
+<link rel="alternate" hreflang="zh-Hant-TW" href="https://jisuanle.com/image-upscaler/">
+<link rel="alternate" hreflang="zh-Hans-CN" href="https://jisuanle.com/cn/image-upscaler/">
+<link rel="alternate" hreflang="en" href="https://jisuanle.com/en/image-upscaler/">
+<link rel="alternate" hreflang="ja" href="https://jisuanle.com/ja/image-upscaler/">
+<link rel="alternate" hreflang="ko" href="https://jisuanle.com/ko/image-upscaler/">
+<link rel="alternate" hreflang="vi" href="https://jisuanle.com/vi/image-upscaler/">
+<link rel="alternate" hreflang="th" href="https://jisuanle.com/th/image-upscaler/">
+<link rel="alternate" hreflang="id" href="https://jisuanle.com/id/image-upscaler/">
+<link rel="alternate" hreflang="es" href="https://jisuanle.com/es/image-upscaler/">
+<link rel="alternate" hreflang="x-default" href="https://jisuanle.com/en/image-upscaler/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI 이미지 업스케일러 — 사진을 2배·4배로 선명하게 무료 확대">
+<meta property="og:description" content="고품질 리샘플링과 샤프닝 또는 브라우저 속 Real-ESRGAN AI로 이미지를 2~4배 확대합니다.">
+<meta property="og:url" content="https://jisuanle.com/ko/image-upscaler/">
+<meta property="og:site_name" content="jisuanle — 무료 이미지 도구 & 생활 계산기">
+<meta property="og:locale" content="ko_KR">
+<link rel="icon" href="../../favicon.ico" sizes="48x48"><link rel="icon" href="../../favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="manifest" href="../../site.webmanifest"><meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../css/pico.min.css?v=94cbb1d0">
+<link rel="stylesheet" href="../../css/style.css?v=6b8348b9">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"AI 이미지 화질 개선","url":"https://jisuanle.com/ko/image-upscaler/","description":"고품질 리샘플링과 샤프닝 또는 브라우저 속 Real-ESRGAN AI로 이미지를 2~4배 확대합니다.","applicationCategory":"MultimediaApplication","operatingSystem":"Any","inLanguage":"ko","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"AI 모드도 무료인가요?","acceptedAnswer":{"@type":"Answer","text":"네, 기기에서 실행됩니다."}},{"@type":"Question","name":"AI 모드가 느린 이유는?","acceptedAnswer":{"@type":"Answer","text":"타일 단위로 처리하기 때문이며 GPU(WebGPU)가 있으면 훨씬 빠릅니다."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"홈","item":"https://jisuanle.com/ko/"},{"@type":"ListItem","position":2,"name":"이미지 도구","item":"https://jisuanle.com/ko/"},{"@type":"ListItem","position":3,"name":"AI 이미지 화질 개선","item":"https://jisuanle.com/ko/image-upscaler/"}]}</script>
+</head>
+<body data-root="../../" data-ed="ko" data-fx="KRW-USD">
+<header class="top"><div class="bar"><a class="logo" href="../../ko/index.html"><span class="mark"><svg class="lm" aria-hidden="true" width="32" height="32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="jlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#jlg)"/><rect x="16" y="11" width="32" height="42" rx="6" fill="#fff"/><rect x="21" y="16" width="22" height="10" rx="2.5" fill="#4338ca"/><rect x="21" y="30" width="9" height="8" rx="2" fill="#2563eb"/><rect x="34" y="30" width="9" height="8" rx="2" fill="#2563eb"/><rect x="21" y="41" width="9" height="8" rx="2" fill="#2563eb"/><rect x="34" y="41" width="9" height="8" rx="2" fill="#7c3aed"/></svg></span><span class="txt">算了<span> jisuanle</span></span></a>
+<nav class="secnav"><a href="../../ko/index.html#image-tools"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><span>이미지 도구</span></a><a href="../../ko/index.html#calculators"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="16" height="20" x="4" y="2" rx="2" /> <line x1="8" x2="16" y1="6" y2="6" /> <line x1="16" x2="16" y1="14" y2="18" /> <path d="M16 10h.01" /> <path d="M12 10h.01" /> <path d="M8 10h.01" /> <path d="M12 14h.01" /> <path d="M8 14h.01" /> <path d="M12 18h.01" /> <path d="M8 18h.01" /> </svg><span>계산기</span></a><a class="fbnav" href="../../ko/feedback/index.html" aria-label="피드백">💬<span>피드백</span></a></nav><div class="tools"><details class="langdd"><summary aria-label="Language">🌐 <span>한국어</span></summary><ul><li><a href="../../image-upscaler/index.html" hreflang="zh-Hant-TW" lang="zh-Hant-TW">繁體中文</a></li><li><a href="../../cn/image-upscaler/index.html" hreflang="zh-Hans-CN" lang="zh-Hans-CN">简体中文</a></li><li><a href="../../en/image-upscaler/index.html" hreflang="en" lang="en">English</a></li><li><a href="../../ja/image-upscaler/index.html" hreflang="ja" lang="ja">日本語</a></li><li><a href="#" hreflang="ko" lang="ko" aria-current="true" class="on">한국어</a></li><li><a href="../../vi/image-upscaler/index.html" hreflang="vi" lang="vi">Tiếng Việt</a></li><li><a href="../../th/image-upscaler/index.html" hreflang="th" lang="th">ไทย</a></li><li><a href="../../id/image-upscaler/index.html" hreflang="id" lang="id">Bahasa Indonesia</a></li><li><a href="../../es/image-upscaler/index.html" hreflang="es" lang="es">Español</a></li></ul></details><button id="theme" type="button" aria-label="다크 모드 전환" title="다크 / 라이트"><span class="sun"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="4" /> <path d="M12 2v2" /> <path d="M12 20v2" /> <path d="m4.93 4.93 1.41 1.41" /> <path d="m17.66 17.66 1.41 1.41" /> <path d="M2 12h2" /> <path d="M20 12h2" /> <path d="m6.34 17.66-1.41 1.41" /> <path d="m19.07 4.93-1.41 1.41" /> </svg></span><span class="moon"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /> </svg></span></button></div></div></header>
+<main>
+<div class="crumbrow"><a class="back" data-back href="../../ko/image/index.html">← 뒤로</a><nav class="crumb" aria-label="breadcrumb"><a href="../../ko/index.html">홈</a> › <a href="../../ko/image/index.html">이미지 도구</a> › AI 이미지 화질 개선</nav></div>
+<h1><span class="ib"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="11" cy="11" r="8" /> <line x1="21" x2="16.65" y1="21" y2="16.65" /> <line x1="11" x2="11" y1="8" y2="14" /> <line x1="8" x2="14" y1="11" y2="11" /> </svg></span>AI 이미지 화질 개선</h1>
+<div class="card"><div class="form">
+<div class="f"><label for="file">이미지 선택(JPG/PNG/WebP)</label><input type="file" id="file" accept="image/*"></div>
+<div class="f"><label for="mode">모드</label><select id="mode"><option value="basic">빠른 모드(2/3/4배, 고품질 리샘플링)</option><option value="ai">AI  모드(Real-ESRGAN 4배)</option></select></div>
+<div id="basicOpts" class="f" style="display:contents">
+<div class="f"><label for="scale">배율</label><select id="scale"><option>2</option><option>3</option><option>4</option></select></div>
+<div class="f"><label for="sharp">샤프닝 강도</label><input type="range" id="sharp" min="0" max="2" step="0.1" value="0.5"></div></div>
+</div><p><button id="go" type="button" class="btn">확대 시작</button></p>
+<progress id="prog" max="100" value="0" style="width:100%"></progress><p id="status" class="note">이미지는 브라우저에서만 처리되며 업로드되지 않습니다.</p></div>
+<div id="cmp" class="card" hidden><div class="cmpbox"><div class="cmp"><img id="before" alt="before"><div id="afterWrap" style="clip-path:inset(0 0 0 50%)"><img id="after" alt="after"></div><input type="range" id="slider" min="0" max="100" value="50" aria-label="전후 비교"></div>
+</div>
+<p class="note">이미지 아래 슬라이더로 비교 | 왼쪽: 원본 확대 · 오른쪽: 결과</p><p><a id="full" class="fullsize" target="_blank" rel="noopener">새 탭에서 원본 크기 보기 ↗</a></p><p><a id="dlpng" class="btn" download="upscaled.png">PNG</a> <a id="dljpg" class="btn" download="upscaled.jpg">JPG</a></p></div>
+
+<p class="note disc"><span>🔒 이미지는 브라우저에서만 처리되며 업로드되지 않습니다.</span></p>
+<p class="fbtool"><a class="fbbtn" href="../../ko/feedback/index.html?tool=AI%20%EC%9D%B4%EB%AF%B8%EC%A7%80%20%ED%99%94%EC%A7%88%20%EA%B0%9C%EC%84%A0"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg> 문제 신고 / 제안</a><small>계산 오류, 고장, 원하는 기능이 있나요? 알려 주세요</small></p>
+<div class="ad"><!-- AdSense slot --></div>
+<section class="card"><h2 style="margin-top:0">사용 방법</h2><p>빠른 모드는 다단계 리샘플링과 샤프닝을 사용합니다. AI 모드는 Real-ESRGAN을 기기에서 실행하며(처음에 약 5MB 모델과 엔진 다운로드) 작거나 흐린 사진의 디테일을 살려 줍니다. 모든 처리는 브라우저 안에서 이루어지며 이미지는 업로드되지 않습니다.</p></section>
+<section class="card faq"><h2 style="margin-top:0">자주 묻는 질문</h2><details><summary>AI 모드도 무료인가요?</summary><p>네, 기기에서 실행됩니다.</p></details><details><summary>AI 모드가 느린 이유는?</summary><p>타일 단위로 처리하기 때문이며 GPU(WebGPU)가 있으면 훨씬 빠릅니다.</p></details></section>
+<div class="ad"><!-- AdSense slot --></div>
+<section class="related"><h2>관련 도구</h2><a href="../../ko/image/compress/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m14 10 7-7" /> <path d="M20 10h-6V4" /> <path d="m3 21 7-7" /> <path d="M4 14h6v6" /> </svg>이미지 압축</a><a href="../../ko/image/resize/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /> <path d="M14 15H9v-5" /> <path d="M16 3h5v5" /> <path d="M21 3 9 15" /> </svg>이미지 크기 조정(SNS 규격)</a><a href="../../ko/image/removebg/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" /> <path d="m5.082 11.09 8.828 8.828" /> </svg>AI 배경 제거</a></section>
+</main>
+<footer><div class="bar"><span>© 2026 jisuanle — 무료 이미지 도구 & 생활 계산기 · jisuanle.com | 🔒 이미지는 브라우저에서만 처리되며 업로드되지 않습니다.</span>
+<span><a href="../../ko/about/index.html">사이트 소개</a> | <a href="../../ko/privacy/index.html">개인정보처리방침</a> | <a href="../../ko/contact/index.html">문의</a> | <a href="../../ko/feedback/index.html">피드백</a> | <a href="../../ko/changelog/index.html">업데이트 내역</a> | <a href="../../ko/licenses/index.html">오픈소스 라이선스</a></span>
+<span id="stats" hidden>오늘 조회 <b id="st-today"></b> · 총 조회 <b id="st-total"></b></span></div></footer>
+<button id="totop" type="button" hidden aria-label="맨 위로" title="맨 위로"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /> </svg></button>
+<script src="../../js/l10n/ko/i18n.js?v=830d33dd"></script>
+<script src="../../js/rates-cn.js?v=d760da82"></script>
+<script src="../../js/calc/image.js?v=0fdc6223"></script>
+<script src="../../js/l10n/ko/upscale.js?v=36695943"></script>
+<script src="../../js/l10n/ko/handoff.js?v=60dceafc"></script>
+<script src="../../js/theme.js?v=705da466"></script>
+<script src="../../js/stats.js?v=fd72b423"></script>
+</body>
+</html>
