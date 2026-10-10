@@ -31,6 +31,7 @@
 <h1><span class="ib"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> </svg></span>房贷计算器（商贷／公积金／组合）</h1>
 <form class="card" data-tool="cn-mortgage" novalidate><div class="form"><div class="f"><label for="type">贷款类型</label><select id="type"><option value="biz">商业贷款</option><option value="hf">公积金贷款</option><option value="combo" selected>组合贷款</option></select></div><div class="f"><label for="amount">商贷金额（万元）</label><input type="number" inputmode="decimal" id="amount" value="100" min="0.01" required></div><div class="f"><label for="rate">商贷利率（%）</label><input type="number" inputmode="decimal" id="rate" value="3.5" min="0" max="20" step="0.01"></div><div class="f"><label for="hfAmount">公积金贷款金额（万元）</label><input type="number" inputmode="decimal" id="hfAmount" value="60" min="0.01" required></div><div class="f"><label for="hfRate">公积金利率（%）</label><input type="number" inputmode="decimal" id="hfRate" value="2.6" min="0" max="20" step="0.01"></div><div class="f"><label for="years">贷款年限（年）</label><input type="number" inputmode="decimal" id="years" value="30" min="1" max="30" required></div><div class="f"><label for="method">还款方式</label><select id="method"><option value="equal" selected>等额本息</option><option value="principal">等额本金</option></select></div></div></form>
 <section class="card result" aria-live="polite"><h2 style="margin-top:0">计算结果</h2><div id="result"></div></section>
+
 <p class="note disc"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /> </svg><span>仅供参考：本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。　数据更新日期：2026-10-10</span></p>
 <p class="fbtool"><a class="fbbtn" href="../../cn/feedback/index.html?tool=%E6%88%BF%E8%B4%B7%E8%AE%A1%E7%AE%97%E5%99%A8%EF%BC%88%E5%95%86%E8%B4%B7%EF%BC%8F%E5%85%AC%E7%A7%AF%E9%87%91%EF%BC%8F%E7%BB%84%E5%90%88%EF%BC%89"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg> 反馈问题 / 建议</a><small>算错、坏掉或想要新功能？告诉我们</small></p>
 <div class="ad"><!-- AdSense slot --></div>
@@ -47,9 +48,9 @@
 <script src="../../js/calc/cn.js?v=1fe74a07"></script>
 <script src="../../js/calc/finance.js?v=7c58e374"></script>
 <script src="../../js/calc/health.js?v=e507fc40"></script>
-<script src="../../js/calc/date.js?v=186dd01f"></script>
+<script src="../../js/calc/date.js?v=5ce2ce26"></script>
 <script src="../../js/calc/units.js?v=4aae8d1c"></script>
-<script src="../../js/ui.js?v=b17c5a8b"></script>
+<script src="../../js/ui.js?v=2d884d36"></script>
 <script src="../../js/theme.js?v=705da466"></script>
 <script src="../../js/stats.js?v=fd72b423"></script>
 </body>

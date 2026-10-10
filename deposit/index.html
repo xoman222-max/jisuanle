@@ -31,6 +31,7 @@
 <h1><span class="ib"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z" /> <path d="M16 10h.01" /> <path d="M2 8v1a2 2 0 0 0 2 2h1" /> </svg></span>定存／複利試算</h1>
 <form class="card" data-tool="deposit" novalidate><div class="form"><div class="f"><label for="principal">單筆本金（元）</label><input type="number" inputmode="decimal" id="principal" value="100000" min="0"></div><div class="f"><label for="monthly">每月投入（元）</label><input type="number" inputmode="decimal" id="monthly" value="5000" min="0"></div><div class="f"><label for="rate">年利率／年報酬率（%）</label><input type="number" inputmode="decimal" id="rate" value="1.7" min="0" max="50" step="0.01"></div><div class="f"><label for="years">期間（年）</label><input type="number" inputmode="decimal" id="years" value="10" min="0.1" max="80" step="0.5" required></div><div class="f"><label for="freq">計息方式</label><select id="freq"><option value="0">單利</option><option value="1">每年複利</option><option value="12" selected>每月複利</option></select></div></div></form>
 <section class="card result" aria-live="polite"><h2 style="margin-top:0">試算結果</h2><div id="result"></div></section>
+
 <p class="note disc"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /> </svg><span>僅供參考：本站試算結果僅供參考，實際金額請以主管機關、銀行或雇主公告為準。　資料更新日期：2026-10-10</span></p>
 <p class="fbtool"><a class="fbbtn" href="../feedback/index.html?tool=%E5%AE%9A%E5%AD%98%EF%BC%8F%E8%A4%87%E5%88%A9%E8%A9%A6%E7%AE%97"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg> 回報問題 / 建議</a><small>算錯、壞掉或想要新功能？告訴我們</small></p>
 <div class="ad"><!-- AdSense slot --></div>
@@ -47,9 +48,9 @@
 <script src="../js/calc/tw.js?v=b913ee0e"></script>
 <script src="../js/calc/finance.js?v=7c58e374"></script>
 <script src="../js/calc/health.js?v=e507fc40"></script>
-<script src="../js/calc/date.js?v=186dd01f"></script>
+<script src="../js/calc/date.js?v=5ce2ce26"></script>
 <script src="../js/calc/units.js?v=4aae8d1c"></script>
-<script src="../js/ui.js?v=b17c5a8b"></script>
+<script src="../js/ui.js?v=2d884d36"></script>
 <script src="../js/theme.js?v=705da466"></script>
 <script src="../js/stats.js?v=fd72b423"></script>
 </body>
