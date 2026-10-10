@@ -1,0 +1,37 @@
+# Cloudflare Pages 標頭設定（https://developers.cloudflare.com/pages/configuration/headers/）
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000
+
+# 檔名沒有版本號 → 快取 1 天（瀏覽器）＋ 7 天（CDN 邊緣，部署時 Cloudflare 會自動清除）
+/css/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/js/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+# 第三方函式庫與模型檔名含版本或內容不會變 → 長期快取
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+/models/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# AI 工具頁：跨來源隔離，讓 onnxruntime-web 可用多執行緒 WASM。
+# 使用 credentialless（而非 require-corp），日後放 Google AdSense 等第三方資源不會被擋（Chrome/Edge/Firefox 支援；Safari 不支援時會自動退回單執行緒）。
+/image-upscaler/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+/image/removebg/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+/cn/image-upscaler/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+/cn/image/removebg/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+# Worker 腳本本身也要帶 COEP，否則多執行緒 worker 無法共享記憶體（對一般頁面無影響）
+/vendor/ort/*
+  Cross-Origin-Embedder-Policy: credentialless
+  Cross-Origin-Resource-Policy: same-origin

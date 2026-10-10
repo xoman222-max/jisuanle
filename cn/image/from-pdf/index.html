@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hans-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF 转图片｜PDF 转 JPG、PNG 每页输出高分辨率，免上传</title>
+<meta name="description" content="用 pdf.js 在浏览器中把 PDF 每一页转成 JPG 或 PNG，可选分辨率，打包 ZIP 下载，机密文档不外流。">
+<link rel="canonical" href="https://jisuanle.com/cn/image/from-pdf/">
+<link rel="alternate" hreflang="zh-Hant-TW" href="https://jisuanle.com/image/from-pdf/">
+<link rel="alternate" hreflang="zh-Hans-CN" href="https://jisuanle.com/cn/image/from-pdf/">
+<link rel="alternate" hreflang="x-default" href="https://jisuanle.com/image/from-pdf/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PDF 转图片｜PDF 转 JPG、PNG 每页输出高分辨率，免上传">
+<meta property="og:description" content="用 pdf.js 在浏览器中把 PDF 每一页转成 JPG 或 PNG，可选分辨率，打包 ZIP 下载，机密文档不外流。">
+<meta property="og:url" content="https://jisuanle.com/cn/image/from-pdf/">
+<meta property="og:site_name" content="算了 jisuanle｜免费图片工具与生活计算器（中国大陆版）">
+<meta property="og:locale" content="zh_CN">
+<link rel="stylesheet" href="../../../css/pico.min.css">
+<link rel="stylesheet" href="../../../css/style.css">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PDF 转图片","url":"https://jisuanle.com/cn/image/from-pdf/","description":"用 pdf.js 在浏览器中把 PDF 每一页转成 JPG 或 PNG，可选分辨率，打包 ZIP 下载，机密文档不外流。","applicationCategory":"FinanceApplication","operatingSystem":"Any","inLanguage":"zh-Hans-CN","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"DPI 选多少？","acceptedAnswer":{"@type":"Answer","text":"分享选 150，打印或看小字选 300。"}},{"@type":"Question","name":"有密码的 PDF 可以转吗？","acceptedAnswer":{"@type":"Answer","text":"目前不支持加密 PDF。"}},{"@type":"Question","name":"页数有限制吗？","acceptedAnswer":{"@type":"Answer","text":"一次最多 50 页。"}},{"@type":"Question","name":"PNG 和 JPG 选哪个？","acceptedAnswer":{"@type":"Answer","text":"文本、表格选 PNG 较锐利；照片多选 JPG 文件较小。"}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首页","item":"https://jisuanle.com/cn/"},{"@type":"ListItem","position":2,"name":"图片工具","item":"https://jisuanle.com/cn/"},{"@type":"ListItem","position":3,"name":"PDF 转图片","item":"https://jisuanle.com/cn/image/from-pdf/"}]}</script>
+</head>
+<body data-root="../../../">
+<header class="top"><div class="bar"><a class="logo" href="../../../cn/index.html"><span class="mark"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="16" height="20" x="4" y="2" rx="2" /> <line x1="8" x2="16" y1="6" y2="6" /> <line x1="16" x2="16" y1="14" y2="18" /> <path d="M16 10h.01" /> <path d="M12 10h.01" /> <path d="M8 10h.01" /> <path d="M12 14h.01" /> <path d="M8 14h.01" /> <path d="M12 18h.01" /> <path d="M8 18h.01" /> </svg></span><span class="txt">算了<span> jisuanle</span></span></a>
+<div class="tools"><nav class="lang"><a class="" href="../../../image/from-pdf/index.html" hreflang="zh-Hant-TW" lang="zh-Hant-TW">繁</a><a class="on" href="#" hreflang="zh-Hans-CN" lang="zh-Hans-CN">简</a></nav><button id="theme" type="button" aria-label="切换深色模式" title="深色／浅色"><span class="sun"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="4" /> <path d="M12 2v2" /> <path d="M12 20v2" /> <path d="m4.93 4.93 1.41 1.41" /> <path d="m17.66 17.66 1.41 1.41" /> <path d="M2 12h2" /> <path d="M20 12h2" /> <path d="m6.34 17.66-1.41 1.41" /> <path d="m19.07 4.93-1.41 1.41" /> </svg></span><span class="moon"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /> </svg></span></button></div></div></header>
+<main>
+<nav class="crumb" aria-label="breadcrumb"><a href="../../../cn/index.html">首页</a> › <a href="../../../cn/image/index.html">图片工具</a> › PDF 转图片</nav>
+<h1><span class="ib"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4.226 20.925A2 2 0 0 0 6 22h12a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v3.127" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m5 11-3 3" /> <path d="m5 17-3-3h10" /> </svg></span>PDF 转图片</h1>
+<div class="card" data-imgtool="pdf2img"><div class="form"><div class="f"><label for="files">选择 PDF 档</label><input type="file" id="files" accept="application/pdf,.pdf"></div><div class="f"><label for="dpi">分辨率（DPI）</label><select id="dpi"><option value="72">72（屏幕）</option><option value="150" selected>150（一般）</option><option value="300">300（打印）</option></select></div><div class="f"><label for="format">输出格式</label><select id="format"><option value="image/jpeg" selected>JPG</option><option value="image/png">PNG</option></select></div></div><p><button id="go" type="button" class="btn">开始处理</button></p><p id="status" class="note">图片只在你的浏览器内处理，不会上传。</p></div>
+<section class="card" id="outCard" hidden><h2 style="margin-top:0">处理结果</h2><div id="out"></div></section>
+<p class="note disc"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /> </svg><span>仅供参考：本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。　数据更新日期：2026-10-10</span></p>
+<div class="ad"><!-- AdSense slot --></div>
+<section class="card"><h2 style="margin-top:0">使用说明</h2><p>想把 PDF 的某一页贴到演示文稿、传到 LINE 或 IG，或是网站只接受图片上传时，就需要把 PDF 转成图片。这个工具使用 Mozilla 开发的开源 PDF 引擎 pdf.js（Apache-2.0 授权），在你的浏览器里逐页绘制 PDF，输出 JPG 或 PNG，多页时可打包 ZIP 下载。分辨率 72 DPI 适合屏幕快速浏览，150 DPI 是一般用途的平衡选择，300 DPI 适合打印或需要看清小字，但文件较大、处理较慢。为避免手机内存不足，一次最多转换前 50 页。合约、帐单、成绩单等文档内容不会上传到服务器。加密或有密码保护的 PDF 目前无法打开；含特殊字体的 PDF 在少数情况下可能显示略有差异。所有处理都在你的浏览器内完成，图片不会上传到任何服务器。</p></section>
+<section class="card faq"><h2 style="margin-top:0">常见问题</h2><details><summary>DPI 选多少？</summary><p>分享选 150，打印或看小字选 300。</p></details><details><summary>有密码的 PDF 可以转吗？</summary><p>目前不支持加密 PDF。</p></details><details><summary>页数有限制吗？</summary><p>一次最多 50 页。</p></details><details><summary>PNG 和 JPG 选哪个？</summary><p>文本、表格选 PNG 较锐利；照片多选 JPG 文件较小。</p></details></section>
+<div class="ad"><!-- AdSense slot --></div>
+<section class="related"><h2>相关工具</h2><a href="../../../cn/image/to-pdf/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <circle cx="10" cy="12" r="2" /> <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" /> </svg>图片转 PDF</a><a href="../../../cn/image/compress/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m14 10 7-7" /> <path d="M20 10h-6V4" /> <path d="m3 21 7-7" /> <path d="M4 14h6v6" /> </svg>图片压缩</a><a href="../../../cn/image/convert/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /> </svg>图片格式转换（含 HEIC）</a></section>
+</main>
+<footer><div class="bar"><span>© 2026 算了 jisuanle｜免费图片工具与生活计算器（中国大陆版）・jisuanle.com｜本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。</span>
+<span><a href="../../../cn/about/index.html">关于我们</a>｜<a href="../../../cn/privacy/index.html">隐私政策</a>｜<a href="../../../cn/contact/index.html">联系我们</a></span></div></footer>
+<script src="../../../js/rates-cn.js"></script>
+<script src="../../../js/calc/imgcore.js"></script>
+<script src="../../../js/imgtools.js"></script>
+<script src="../../../js/handoff.js"></script>
+<script src="../../../js/theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>房貸試算｜本息均攤、本金均攤、寬限期與攤還表</title>
+<meta name="description" content="輸入貸款金額、利率、年限與寬限期，比較本息平均攤還與本金平均攤還的月付金、總利息，並產生完整攤還表。">
+<link rel="canonical" href="https://jisuanle.com/mortgage/">
+<link rel="alternate" hreflang="zh-Hant-TW" href="https://jisuanle.com/mortgage/">
+<link rel="alternate" hreflang="zh-Hans-CN" href="https://jisuanle.com/cn/mortgage/">
+<link rel="alternate" hreflang="x-default" href="https://jisuanle.com/mortgage/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="房貸試算｜本息均攤、本金均攤、寬限期與攤還表">
+<meta property="og:description" content="輸入貸款金額、利率、年限與寬限期，比較本息平均攤還與本金平均攤還的月付金、總利息，並產生完整攤還表。">
+<meta property="og:url" content="https://jisuanle.com/mortgage/">
+<meta property="og:site_name" content="算了 jisuanle｜免費圖片工具與生活計算機">
+<meta property="og:locale" content="zh_TW">
+<link rel="stylesheet" href="../css/pico.min.css">
+<link rel="stylesheet" href="../css/style.css">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"房貸試算","url":"https://jisuanle.com/mortgage/","description":"輸入貸款金額、利率、年限與寬限期，比較本息平均攤還與本金平均攤還的月付金、總利息，並產生完整攤還表。","applicationCategory":"FinanceApplication","operatingSystem":"Any","inLanguage":"zh-Hant-TW","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"本息均攤和本金均攤哪個好？","acceptedAnswer":{"@type":"Answer","text":"本金均攤總利息較少但前期壓力大；本息均攤月付固定，較好規劃。收入穩定且充裕可選本金均攤。"}},{"@type":"Question","name":"寬限期要不要用？","acceptedAnswer":{"@type":"Answer","text":"寬限期可減輕前期負擔，但會增加總利息，結束後月付會大增，建議確認屆時能負擔再使用。"}},{"@type":"Question","name":"利率調升 0.125% 影響多少？","acceptedAnswer":{"@type":"Answer","text":"以 1,000 萬 30 年計，月付約增加 600 多元，可直接修改利率比較。"}},{"@type":"Question","name":"提前還款划算嗎？","acceptedAnswer":{"@type":"Answer","text":"多數房貸綁約期過後提前還款不收違約金，能有效減少利息，但需保留緊急預備金。"}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"首頁","item":"https://jisuanle.com/"},{"@type":"ListItem","position":2,"name":"貸款理財","item":"https://jisuanle.com/"},{"@type":"ListItem","position":3,"name":"房貸試算","item":"https://jisuanle.com/mortgage/"}]}</script>
+</head>
+<body data-root="../">
+<header class="top"><div class="bar"><a class="logo" href="../index.html"><span class="mark"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="16" height="20" x="4" y="2" rx="2" /> <line x1="8" x2="16" y1="6" y2="6" /> <line x1="16" x2="16" y1="14" y2="18" /> <path d="M16 10h.01" /> <path d="M12 10h.01" /> <path d="M8 10h.01" /> <path d="M12 14h.01" /> <path d="M8 14h.01" /> <path d="M12 18h.01" /> <path d="M8 18h.01" /> </svg></span><span class="txt">算了<span> jisuanle</span></span></a>
+<div class="tools"><nav class="lang"><a class="on" href="#" hreflang="zh-Hant-TW" lang="zh-Hant-TW">繁</a><a class="" href="../cn/mortgage/index.html" hreflang="zh-Hans-CN" lang="zh-Hans-CN">简</a></nav><button id="theme" type="button" aria-label="切換深色模式" title="深色／淺色"><span class="sun"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="4" /> <path d="M12 2v2" /> <path d="M12 20v2" /> <path d="m4.93 4.93 1.41 1.41" /> <path d="m17.66 17.66 1.41 1.41" /> <path d="M2 12h2" /> <path d="M20 12h2" /> <path d="m6.34 17.66-1.41 1.41" /> <path d="m19.07 4.93-1.41 1.41" /> </svg></span><span class="moon"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /> </svg></span></button></div></div></header>
+<main>
+<nav class="crumb" aria-label="breadcrumb"><a href="../index.html">首頁</a> › 貸款理財 › 房貸試算</nav>
+<h1><span class="ib"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> </svg></span>房貸試算</h1>
+<form class="card" data-tool="mortgage" novalidate><div class="form"><div class="f"><label for="amount">貸款金額（萬元）</label><input type="number" inputmode="decimal" id="amount" value="1000" min="1" step="10" required></div><div class="f"><label for="rate">年利率（%）</label><input type="number" inputmode="decimal" id="rate" value="2.2" min="0" max="20" step="0.01"></div><div class="f"><label for="years">貸款年限（年）</label><input type="number" inputmode="decimal" id="years" value="30" min="1" max="40" required></div><div class="f"><label for="grace">寬限期（年，只繳息）</label><input type="number" inputmode="decimal" id="grace" value="0" min="0" max="5"></div><div class="f"><label for="method">攤還方式</label><select id="method"><option value="equal" selected>本息平均攤還</option><option value="principal">本金平均攤還</option></select></div></div></form>
+<section class="card result" aria-live="polite"><h2 style="margin-top:0">試算結果</h2><div id="result"></div></section>
+<p class="note disc"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /> </svg><span>僅供參考：本站試算結果僅供參考，實際金額請以主管機關、銀行或雇主公告為準。　資料更新日期：2026-10-10</span></p>
+<div class="ad"><!-- AdSense slot --></div>
+<section class="card"><h2 style="margin-top:0">計算說明</h2><p>房貸最常見的兩種還款方式是「本息平均攤還」與「本金平均攤還」。本息均攤每月繳的金額固定，前期繳的多半是利息，方便規劃家庭預算，是銀行最常用的方式；本金均攤每月償還固定本金，利息隨餘額減少而下降，所以首期月付最高、之後逐月遞減，總利息比本息均攤少。寬限期是指前幾年只繳利息不還本金，可以減輕剛買房時的壓力，但寬限期結束後月付金會明顯跳升，總利息也會增加。以 1,000 萬元、年利率 2.2%、30 年本息均攤計算，每月約 3.8 萬元，總利息約 367 萬元。新青安等政策貸款常有分段利率與政府補貼，實際利率請向銀行確認；本工具以單一固定利率試算，可在攤還表中檢視每期本金、利息與剩餘本金，也能隨時修改條件比較不同方案。</p></section>
+<section class="card faq"><h2 style="margin-top:0">常見問題</h2><details><summary>本息均攤和本金均攤哪個好？</summary><p>本金均攤總利息較少但前期壓力大；本息均攤月付固定，較好規劃。收入穩定且充裕可選本金均攤。</p></details><details><summary>寬限期要不要用？</summary><p>寬限期可減輕前期負擔，但會增加總利息，結束後月付會大增，建議確認屆時能負擔再使用。</p></details><details><summary>利率調升 0.125% 影響多少？</summary><p>以 1,000 萬 30 年計，月付約增加 600 多元，可直接修改利率比較。</p></details><details><summary>提前還款划算嗎？</summary><p>多數房貸綁約期過後提前還款不收違約金，能有效減少利息，但需保留緊急預備金。</p></details></section>
+<div class="ad"><!-- AdSense slot --></div>
+<section class="related"><h2>相關工具</h2><a href="../apr/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <line x1="19" x2="5" y1="5" y2="19" /> <circle cx="6.5" cy="6.5" r="2.5" /> <circle cx="17.5" cy="17.5" r="2.5" /> </svg>信貸／分期利率 APR 試算</a><a href="../deposit/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z" /> <path d="M16 10h.01" /> <path d="M2 8v1a2 2 0 0 0 2 2h1" /> </svg>定存／複利試算</a></section>
+</main>
+<footer><div class="bar"><span>© 2026 算了 jisuanle｜免費圖片工具與生活計算機・jisuanle.com｜本站試算結果僅供參考，實際金額請以主管機關、銀行或雇主公告為準。</span>
+<span><a href="../about/index.html">關於我們</a>｜<a href="../privacy/index.html">隱私權政策</a>｜<a href="../contact/index.html">聯絡我們</a></span></div></footer>
+<script src="../js/rates.js"></script>
+<script src="../js/calc/tw.js"></script>
+<script src="../js/calc/finance.js"></script>
+<script src="../js/calc/health.js"></script>
+<script src="../js/calc/date.js"></script>
+<script src="../js/calc/units.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/theme.js"></script>
+</body>
+</html>

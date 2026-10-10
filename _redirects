@@ -1,0 +1,7 @@
+# Cloudflare Pages 轉址（https://developers.cloudflare.com/pages/configuration/redirects/）
+# 常見的舊網址／簡寫
+/image-tools /image/ 301
+/cn/image-tools /cn/image/ 301
+/upscale /image-upscaler/ 301
+/removebg /image/removebg/ 301
+# 註：www.jisuanle.com → jisuanle.com 屬於網域層級轉址，請在 Cloudflare「規則 → 重新導向規則」設定（見 DEPLOY-CLOUDFLARE.md）
