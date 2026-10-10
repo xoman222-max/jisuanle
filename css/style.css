@@ -138,3 +138,5 @@ a.fbbtn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1rem;bor
 .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.45rem}.chips .chip{width:auto;margin:0;padding:.25rem .7rem;font-size:.85rem;border-radius:999px;background:var(--pico-card-background-color);color:var(--pico-primary);border:1px solid var(--pico-primary)}.chips .chip:hover{background:var(--pico-primary-background);color:var(--pico-primary-inverse)}
 .dice .dicerow{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem 1rem;margin-top:.5rem}.dice .dicerow .btn{width:auto;margin:0}.dice .dicerow .chk{margin:0;display:inline-flex;gap:.3rem;align-items:center;font-size:.9rem}.dice .dicerow .chk input{margin:0}
 .chips .chip.on{background:var(--pico-primary-background);color:var(--pico-primary-inverse)}
+.aicap{margin-top:.7rem}.aicap .btn{width:auto;margin:0}.aicap #aichips{margin-top:.4rem}
+.aiq{font-weight:600;color:var(--pico-primary)}
