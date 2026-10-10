@@ -40,3 +40,7 @@
   Cache-Control: public, max-age=86400
 /favicon*
   Cache-Control: public, max-age=86400
+/vendor/*/LICENSE
+  Content-Type: text/plain; charset=utf-8
+/css/LICENSE-pico.md
+  Content-Type: text/plain; charset=utf-8
