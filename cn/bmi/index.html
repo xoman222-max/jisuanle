@@ -31,6 +31,7 @@
 <form class="card" data-tool="cn-bmi" novalidate><div class="form"><div class="f"><label for="h">身高（厘米）</label><input type="number" inputmode="decimal" id="h" value="170" min="50" max="250" required></div><div class="f"><label for="w">体重（公斤）</label><input type="number" inputmode="decimal" id="w" value="65" min="10" max="400" step="0.1" required></div></div></form>
 <section class="card result" aria-live="polite"><h2 style="margin-top:0">计算结果</h2><div id="result"></div></section>
 <p class="note disc"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /> </svg><span>仅供参考：本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。　数据更新日期：2026-10-10</span></p>
+<p class="note"><a href="../../cn/feedback/index.html?tool=BMI%20%E8%AE%A1%E7%AE%97%E5%99%A8%EF%BC%88%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%EF%BC%89"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg> 反馈问题／建议</a></p>
 <div class="ad"><!-- AdSense slot --></div>
 <section class="card"><h2 style="margin-top:0">计算说明</h2><p>体质指数（BMI）＝体重（千克）÷ 身高（米）的平方。根据国家卫生行业标准《成人体重判定》（WS/T 428-2013），中国成人 BMI 小于 18.5 为体重过低，18.5 至 23.9 为正常，24.0 至 27.9 为超重，28 及以上为肥胖。这一标准比世界卫生组织的国际标准（25 超重、30 肥胖）更严格，因为中国人在相同 BMI 下腹部脂肪和慢性病风险更高。除了 BMI，标准还用腰围判断中心型肥胖：男性腰围 85 厘米至未满 90 厘米、女性 80 厘米至未满 85 厘米为中心型肥胖前期，男性 90 厘米、女性 85 厘米以上为中心型肥胖。BMI 不能区分肌肉和脂肪，运动员、孕妇、老人和 18 岁以下青少年不宜直接套用，儿童青少年需按年龄和性别的筛查标准判断。</p></section>
 <section class="card faq"><h2 style="margin-top:0">常见问题</h2><details><summary>中国 BMI 正常范围是多少？</summary><p>18.5 至 23.9。</p></details><details><summary>BMI 24 算胖吗？</summary><p>按中国标准 24 至 27.9 属于超重，28 以上为肥胖。</p></details><details><summary>为什么和国外标准不同？</summary><p>中国人群在较低 BMI 时慢性病风险就开始升高。</p></details><details><summary>青少年可以用吗？</summary><p>不适用成人标准，需按年龄性别对照筛查表。</p></details></section>
@@ -38,7 +39,8 @@
 <section class="related"><h2>相关工具</h2><a href="../../cn/date/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 2v3" /> <path d="M16 2v3" /> <rect x="3" y="3" width="18" height="18" rx="2" /> <path d="M3 9h18" /> <path d="M8 13h.01" /> <path d="M12 13h.01" /> <path d="M16 13h.01" /> <path d="M8 17h.01" /> <path d="M12 17h.01" /> <path d="M16 17h.01" /> </svg>日期计算器</a></section>
 </main>
 <footer><div class="bar"><span>© 2026 算了 jisuanle｜免费图片工具与生活计算器（中国大陆版）・jisuanle.com｜本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。</span>
-<span><a href="../../cn/about/index.html">关于我们</a>｜<a href="../../cn/privacy/index.html">隐私政策</a>｜<a href="../../cn/contact/index.html">联系我们</a></span></div></footer>
+<span><a href="../../cn/about/index.html">关于我们</a>｜<a href="../../cn/privacy/index.html">隐私政策</a>｜<a href="../../cn/contact/index.html">联系我们</a>｜<a href="../../cn/feedback/index.html">意见反馈</a></span>
+<span id="stats" hidden>今日浏览 <b id="st-today"></b> · 总浏览 <b id="st-total"></b></span></div></footer>
 <script src="../../js/rates-cn.js"></script>
 <script src="../../js/calc/cn.js"></script>
 <script src="../../js/calc/finance.js"></script>
@@ -47,5 +49,6 @@
 <script src="../../js/calc/units.js"></script>
 <script src="../../js/ui.js"></script>
 <script src="../../js/theme.js"></script>
+<script src="../../js/stats.js"></script>
 </body>
 </html>

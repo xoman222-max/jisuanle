@@ -45,7 +45,7 @@
   }
   function show(c) {
     var url = c.toDataURL('image/png'); $('after').src = url; $('before').src = canvasOf(src, c.width, c.height).toDataURL('image/jpeg', 0.9);
-    $('cmp').hidden = false; $('dlpng').href = url; $('dljpg').href = c.toDataURL('image/jpeg', 0.92);
+    $('cmp').hidden = false; c.toBlob(function (b) { $('full').href = URL.createObjectURL(b); }); $('dlpng').href = url; $('dljpg').href = c.toDataURL('image/jpeg', 0.92);
     msg(t.done + '：' + c.width + ' × ' + c.height + (backend && $('mode').value === 'ai' ? '（' + backend + '）' : '')); window.__upscaleResult = { width: c.width, height: c.height };
   }
   $('mode').addEventListener('change', function () { $('basicOpts').style.display = this.value === 'ai' ? 'none' : 'contents'; });

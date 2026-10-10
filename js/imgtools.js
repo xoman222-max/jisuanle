@@ -25,7 +25,7 @@
     window.__out = [];
     for (const it of items) {
       var url = URL.createObjectURL(it.blob), d = document.createElement('div'); d.className = 'outitem';
-      d.innerHTML = (/^image\//.test(it.blob.type) ? '<img src="' + url + '" alt="">' : '') + '<div class="note">' + it.name + (it.w ? '｜' + it.w + ' × ' + it.h : '') + '｜' + kb(it.blob.size) + (it.note ? '｜' + it.note : '') + '</div><a class="btn" download="' + it.name + '" href="' + url + '">' + T.dl + '</a>';
+      d.innerHTML = (/^image\//.test(it.blob.type) ? '<a href="' + url + '" target="_blank" rel="noopener" title="' + (CN ? '点击在新标签页查看原尺寸' : '點擊在新分頁查看原尺寸') + '"><img src="' + url + '" alt=""></a>' : '') + '<div class="note">' + it.name + (it.w ? '｜' + it.w + ' × ' + it.h : '') + '｜' + kb(it.blob.size) + (it.note ? '｜' + it.note : '') + (/^image\//.test(it.blob.type) ? '｜<a class="fullsize" href="' + url + '" target="_blank" rel="noopener">' + (CN ? '查看原尺寸 ↗' : '查看原尺寸 ↗') + '</a>' : '') + '</div><a class="btn" download="' + it.name + '" href="' + url + '">' + T.dl + '</a>';
       out.appendChild(d); window.__out.push({ name: it.name, type: it.blob.type, size: it.blob.size, width: it.w, height: it.h });
     }
     if (items.length > 1) { var z = new Blob([K.makeZip(await Promise.all(items.map(async function (it) { return { name: it.name, data: await u8(it.blob) }; })))], { type: 'application/zip' }); var a = document.createElement('a'); a.className = 'btn'; a.download = 'images.zip'; a.href = URL.createObjectURL(z); a.textContent = T.zip; out.insertBefore(a, out.firstChild); window.__zip = z.size; }
@@ -84,7 +84,7 @@
       return show(out, doc.numPages > 50 ? '<p class="note">' + (CN ? '只转换前 50 页' : '只轉換前 50 頁') + '</p>' : ''); },
     color: async function () { var im = (await images())[0], s = Math.min(1, 900 / Math.max(iw(im), ih(im))), c = draw(im, iw(im) * s, ih(im) * s), g = ctx(c), d = g.getImageData(0, 0, c.width, c.height).data, pal = K.palette(d, v('k') || 6);
       var sw = function (h) { var r = parseInt(h.slice(1, 3), 16), gg = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16), l = K.hsl(r, gg, b); return '<div class="sw"><i style="background:' + h + '"></i><b>' + h + '</b><small>rgb(' + r + ',' + gg + ',' + b + ')　hsl(' + l.join(',') + ')</small></div>'; };
-      $('out').innerHTML = '<p class="note">' + (CN ? '点击图片任意位置取色：' : '點擊圖片任意位置取色：') + '<span id="picked"></span></p>'; $('outCard').hidden = false; c.style.maxWidth = '100%'; c.style.cursor = 'crosshair'; $('out').appendChild(c);
+      $('out').innerHTML = '<p class="note">' + (CN ? '点击图片任意位置取色：' : '點擊圖片任意位置取色：') + '<span id="picked"></span></p>'; $('outCard').hidden = false; c.style.cursor = 'crosshair'; $('out').appendChild(c);
       var p = document.createElement('div'); p.className = 'palette'; p.innerHTML = '<h3>' + (CN ? '主色调色板' : '主色調色盤') + '</h3>' + pal.map(function (x) { return sw(x.hex); }).join(''); $('out').appendChild(p);
       c.addEventListener('click', function (e) { var r = c.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) * c.width / r.width), y = Math.floor((e.clientY - r.top) * c.height / r.height), q = g.getImageData(x, y, 1, 1).data; $('picked').innerHTML = sw(K.hex(q[0], q[1], q[2])); });
       window.__out = pal; msg(T.done); },

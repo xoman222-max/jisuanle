@@ -36,22 +36,25 @@
 <div class="f"><label for="sharp">锐化强度</label><input type="range" id="sharp" min="0" max="2" step="0.1" value="0.5"></div></div>
 </div><p><button id="go" type="button" class="btn">开始放大</button></p>
 <progress id="prog" max="100" value="0" style="width:100%"></progress><p id="status" class="note">图片只在你的浏览器内处理，不会上传。</p></div>
-<div id="cmp" class="card" hidden><div class="cmp"><img id="before" alt="before"><div id="afterWrap" style="clip-path:inset(0 0 0 50%)"><img id="after" alt="after"></div></div>
-<input type="range" id="slider" min="0" max="100" value="50" style="width:100%" aria-label="前后对比">
-<p class="note">左：原图放大　右：处理结果</p><p><a id="dlpng" class="btn" download="upscaled.png">PNG</a> <a id="dljpg" class="btn" download="upscaled.jpg">JPG</a></p></div>
-<p class="note disc"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /> </svg><span>仅供参考：本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。　数据更新日期：2026-10-10</span></p>
+<div id="cmp" class="card" hidden><div class="cmpbox"><div class="cmp"><img id="before" alt="before"><div id="afterWrap" style="clip-path:inset(0 0 0 50%)"><img id="after" alt="after"></div><input type="range" id="slider" min="0" max="100" value="50" aria-label="前后对比"></div>
+</div>
+<p class="note">拖动图片下方滑块对比｜左：原图放大　右：处理结果</p><p><a id="full" class="fullsize" target="_blank" rel="noopener">在新标签页查看原尺寸 ↗</a></p><p><a id="dlpng" class="btn" download="upscaled.png">PNG</a> <a id="dljpg" class="btn" download="upscaled.jpg">JPG</a></p></div>
+<p class="note disc"><span>🔒 图片只在你的浏览器中处理，不会上传到任何服务器。</span></p>
+<p class="note"><a href="../../cn/feedback/index.html?tool=%E5%9B%BE%E7%89%87%E6%94%BE%E5%A4%A7%EF%BC%88AI%20%E6%97%A0%E6%8D%9F%E6%94%BE%E5%A4%A7%EF%BC%89"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg> 反馈问题／建议</a></p>
 <div class="ad"><!-- AdSense slot --></div>
 <section class="card"><h2 style="margin-top:0">使用说明</h2><p>这个图片放大工具完全在你的浏览器中运行，照片不会上传到任何服务器，适合处理证件照、商品图、老照片等私人图片。“快速模式”采用多步高质量重采样，每步最多放大 2 倍，逐步放大到 2、3 或 4 倍，再配合可调节的反锐化掩模让边缘更清晰，速度快，手机也能流畅运行。“AI 模式”使用开源的 Real-ESRGAN（realesr-general-x4v3）超分辨率模型，通过 ONNX Runtime Web 在本地运算，支持 WebGPU 的浏览器会调用显卡加速，否则自动改用 WebAssembly。AI 会“补出”细节，对压缩模糊的图片和小缩略图效果明显，但也可能生成原本不存在的纹理，人脸和文字请自行核对。为避免手机内存不足，AI 模式会把图片切成小块逐块处理，并限制输入最长边（电脑 1024、手机 512 像素）。首次使用 AI 模式需下载模型和运算引擎，之后浏览器会缓存。</p></section>
 <section class="card faq"><h2 style="margin-top:0">常见问题</h2><details><summary>图片会上传吗？</summary><p>不会，全部在你的设备上完成，关闭网页即消失。</p></details><details><summary>快速模式和 AI 模式有什么区别？</summary><p>快速模式是插值加锐化，速度快；AI 模式重建细节，效果更好但更慢，需下载约 5 MB 模型。</p></details><details><summary>AI 模式为什么慢？</summary><p>没有 WebGPU 时使用 CPU 计算，512 像素的图片可能需要几十秒。</p></details><details><summary>最大能放大多少？</summary><p>快速模式输出最长边电脑 8192、手机 4096 像素；AI 模式输入自动缩小到 1024（手机 512）像素以内。</p></details><details><summary>放大后的图片能商用吗？</summary><p>工具与模型（BSD-3 许可）不限制输出用途，但图片版权仍归原作者。</p></details></section>
 <div class="ad"><!-- AdSense slot --></div>
 <section class="related"><h2>相关工具</h2><a href="../../cn/image/compress/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m14 10 7-7" /> <path d="M20 10h-6V4" /> <path d="m3 21 7-7" /> <path d="M4 14h6v6" /> </svg>图片压缩</a><a href="../../cn/image/resize/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /> <path d="M14 15H9v-5" /> <path d="M16 3h5v5" /> <path d="M21 3 9 15" /> </svg>图片尺寸调整（社群尺寸）</a><a href="../../cn/image/removebg/index.html"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" /> <path d="m5.082 11.09 8.828 8.828" /> </svg>AI 抠图（移除背景）</a></section>
 </main>
-<footer><div class="bar"><span>© 2026 算了 jisuanle｜免费图片工具与生活计算器（中国大陆版）・jisuanle.com｜本站计算结果仅供参考，具体以当地政府部门、银行或用人单位公布为准。</span>
-<span><a href="../../cn/about/index.html">关于我们</a>｜<a href="../../cn/privacy/index.html">隐私政策</a>｜<a href="../../cn/contact/index.html">联系我们</a></span></div></footer>
+<footer><div class="bar"><span>© 2026 算了 jisuanle｜免费图片工具与生活计算器（中国大陆版）・jisuanle.com｜🔒 图片只在你的浏览器中处理，不会上传到任何服务器。</span>
+<span><a href="../../cn/about/index.html">关于我们</a>｜<a href="../../cn/privacy/index.html">隐私政策</a>｜<a href="../../cn/contact/index.html">联系我们</a>｜<a href="../../cn/feedback/index.html">意见反馈</a></span>
+<span id="stats" hidden>今日浏览 <b id="st-today"></b> · 总浏览 <b id="st-total"></b></span></div></footer>
 <script src="../../js/rates-cn.js"></script>
 <script src="../../js/calc/image.js"></script>
 <script src="../../js/upscale.js"></script>
 <script src="../../js/handoff.js"></script>
 <script src="../../js/theme.js"></script>
+<script src="../../js/stats.js"></script>
 </body>
 </html>
