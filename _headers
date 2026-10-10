@@ -6,11 +6,11 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
   Strict-Transport-Security: max-age=31536000
 
-# 檔名沒有版本號 → 快取 1 天（瀏覽器）＋ 7 天（CDN 邊緣，部署時 Cloudflare 會自動清除）
+# HTML 以 ?v=<內容雜湊> 引用；仍保守短快取，避免舊 HTML 配新檔
 /css/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=600, stale-while-revalidate=86400
 /js/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=600, stale-while-revalidate=86400
 # 第三方函式庫與模型檔名含版本或內容不會變 → 長期快取
 /vendor/*
   Cache-Control: public, max-age=31536000, immutable
