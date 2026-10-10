@@ -35,3 +35,8 @@
 /vendor/ort/*
   Cross-Origin-Embedder-Policy: credentialless
   Cross-Origin-Resource-Policy: same-origin
+/site.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=86400
+/favicon*
+  Cache-Control: public, max-age=86400
