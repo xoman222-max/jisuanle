@@ -99,3 +99,11 @@ input[type=range]{margin-bottom:.6rem}
 .fullsize{font-size:.85rem}
 .cmp #slider{position:absolute;left:0;width:100%;bottom:10px;margin:0;z-index:2}
 .cmp::after{content:'';position:absolute;inset:auto 0 0 0;height:44px;background:linear-gradient(transparent,rgba(0,0,0,.25));pointer-events:none}
+
+.secnav{display:flex;gap:.2rem;margin-left:auto;margin-right:.5rem}.secnav a{display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .6rem;border-radius:999px;font-size:.9rem;text-decoration:none;color:inherit}.secnav a:hover{background:var(--pico-secondary-background,rgba(127,127,127,.12))}.secnav .ic{width:1.05em;height:1.05em}
+@media(max-width:520px){.secnav span{display:none}}
+.quickcalc{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;justify-content:center;margin-top:.8rem;font-size:.9rem}.quickcalc a{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .7rem;border:1px solid var(--pico-muted-border-color);border-radius:999px;text-decoration:none}.quickcalc .ic{width:1em;height:1em}
+.switch{position:sticky;top:.5rem;z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1rem}.switch a{display:flex;justify-content:center;align-items:center;gap:.4rem;padding:.85rem .5rem;border-radius:999px;font-weight:700;font-size:1.05rem;text-decoration:none;background:var(--pico-primary-background);color:var(--pico-primary-inverse);box-shadow:0 4px 14px rgba(0,0,0,.12)}.switch a+a{background:var(--pico-card-background-color);color:var(--pico-primary);border:2px solid var(--pico-primary)}.switch b{font-size:.8rem;opacity:.85;background:rgba(255,255,255,.22);padding:.05rem .45rem;border-radius:999px}
+#image-tools,#calculators{scroll-margin-top:4.5rem}html{scroll-behavior:smooth}
+.allbtn{text-align:center;margin:1rem 0 .4rem}.morelinks{margin-top:.4rem}.morelinks p{display:flex;flex-wrap:wrap;gap:.3rem .9rem;font-size:.9rem}
+.hero .quickcalc a{color:#fff;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.12)}.hero .quickcalc a:hover{background:rgba(255,255,255,.25)}
