@@ -10,11 +10,13 @@
   var b = document.body.getAttribute('data-fx') || 'TWD-USD', q = new URLSearchParams(location.search);
   from.value = q.get('from') || b.split('-')[0]; to.value = q.get('to') || b.split('-')[1];
   function fmt(x, c) { var d = ['JPY', 'KRW', 'VND', 'IDR'].indexOf(c) >= 0 ? 0 : (x < 1 ? 4 : 2); return Number(x).toLocaleString(LANG, { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  // 匯率（1 單位）用有效位數顯示，例如 1 TWD = 4.953 JPY、0.03130 USD
+  function fmtRate(x) { return x >= 1000 ? Number(x).toLocaleString(LANG, { maximumFractionDigits: 2 }) : Number(x).toLocaleString(LANG, { minimumSignificantDigits: 4, maximumSignificantDigits: 4 }); }
   function run() {
     var a = parseFloat(amt.value), f = from.value, tt = to.value, R = data && data.rates;
     if (!R || !R[f] || !R[tt] || !(a >= 0)) { out.innerHTML = '<p class="err">' + t('請輸入金額') + '</p>'; return; }
     var rate = R[tt] / R[f], res = a * rate;
-    out.innerHTML = '<div>' + fmt(a, f) + ' ' + f + ' =</div><div class="big">' + fmt(res, tt) + ' ' + tt + '</div><div class="kv"><div>1 ' + f + '</div><div>' + fmt(rate, tt) + ' ' + tt + '</div><div>1 ' + tt + '</div><div>' + fmt(1 / rate, f) + ' ' + f + '</div></div>';
+    out.innerHTML = '<div>' + fmt(a, f) + ' ' + f + ' =</div><div class="big">' + fmt(res, tt) + ' ' + tt + '</div><div class="kv"><div>1 ' + f + '</div><div>' + fmtRate(rate) + ' ' + tt + '</div><div>1 ' + tt + '</div><div>' + fmtRate(1 / rate) + ' ' + f + '</div></div>';
     var when = new Date(data.time * 1000).toLocaleString(LANG, { dateStyle: 'medium', timeStyle: 'short' });
     meta.innerHTML = t('匯率更新時間') + '：' + when + '｜' + t('來源') + '：<a href="https://www.exchangerate-api.com" rel="noopener" target="_blank">ExchangeRate-API</a>' + (live ? '' : '（' + t('離線備援資料') + '）');
     window.__fx = { rate: rate, res: res, live: live };
