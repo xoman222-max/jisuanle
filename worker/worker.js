@@ -70,6 +70,7 @@ export class Stats extends DurableObject {
     this.sql = ctx.storage.sql;
     this.sql.exec('CREATE TABLE IF NOT EXISTS days (day TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0, today TEXT, t INTEGER NOT NULL DEFAULT 0)'); // 每頁匿名瀏覽數（只有路徑，無個資）
     this.recent = new Map(); // 30 分鐘去重（記憶體；DO 休眠後重置，可接受）
   }
   read(day) {
@@ -77,13 +78,21 @@ export class Stats extends DurableObject {
     const all = this.sql.exec("SELECT n FROM meta WHERE k = 'total'").toArray()[0];
     return { today: t ? t.n : 0, total: all ? all.n : 0 };
   }
-  hit(hash, day, now = Date.now()) {
+  pathHit(path, day) {
+    if (!/^\/[a-z0-9\/-]{0,80}$/.test(path)) return;
+    const ex = this.sql.exec('SELECT 1 FROM paths WHERE path = ?', path).toArray()[0];
+    if (!ex) { const c = this.sql.exec('SELECT COUNT(*) AS c FROM paths').toArray()[0].c; if (c >= 2000) return; }
+    this.sql.exec('INSERT INTO paths (path, n, today, t) VALUES (?, 1, ?, 1) ON CONFLICT(path) DO UPDATE SET n = n + 1, t = CASE WHEN today = excluded.today THEN t + 1 ELSE 1 END, today = excluded.today', path, day);
+  }
+  topPaths(limit = 100) { return this.sql.exec('SELECT path, n, today, t FROM paths ORDER BY n DESC LIMIT ?', limit).toArray(); }
+  hit(hash, day, now = Date.now(), path = null) {
     const last = this.recent.get(hash);
     if (!(last && now - last < 30 * 60e3)) {
       this.recent.set(hash, now);
       if (this.recent.size > 50000) { for (const [k, v] of this.recent) if (now - v > 30 * 60e3) this.recent.delete(k); }
       this.sql.exec('INSERT INTO days (day, n) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1', day);
       this.sql.exec("INSERT INTO meta (k, n) VALUES ('total', 1) ON CONFLICT(k) DO UPDATE SET n = n + 1");
+      if (path) this.pathHit(path, day);
       return { ...this.read(day), counted: true };
     }
     return { ...this.read(day), counted: false };
@@ -108,7 +117,7 @@ async function stats(request, env) {
     const key = url.searchParams.get('key');
     if (key) { // 站長私人查看：/api/stats?key=<STATS_KEY>
       if (!env.STATS_KEY || key !== env.STATS_KEY) return json({ ok: false, error: 'forbidden' }, 403);
-      return json({ ok: true, day, ...(await stub.read(day)), aiToday: await stub.aiUsed(day), history: await stub.history(60) });
+      return json({ ok: true, day, ...(await stub.read(day)), aiToday: await stub.aiUsed(day), history: await stub.history(60), paths: await stub.topPaths(Number(url.searchParams.get('n')) || 100) });
     }
     return json(show ? { ok: true, show, ...(await stub.read(day)) } : { ok: true, show: false });
   }
@@ -119,7 +128,7 @@ async function stats(request, env) {
   let path = '/'; try { const b = await request.json(); path = String(b.path || '/').slice(0, 200); } catch (e) {}
   if (BOT.test(ua) || !ua) return json(show ? { ok: true, show, counted: false, ...(await stub.read(day)) } : { ok: true, show: false, counted: false });
   const hash = await sha((request.headers.get('cf-connecting-ip') || 'local') + '|' + ua + '|' + path);
-  const r = await stub.hit(hash, day);
+  const r = await stub.hit(hash, day, Date.now(), path.replace(/index\.html$/, '').toLowerCase());
   return json(show ? { ok: true, show, ...r } : { ok: true, show: false, counted: r.counted });
 }
 
