@@ -44,3 +44,7 @@
   Content-Type: text/plain; charset=utf-8
 /css/LICENSE-pico.md
   Content-Type: text/plain; charset=utf-8
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
