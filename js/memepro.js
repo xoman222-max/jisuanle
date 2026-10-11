@@ -13,7 +13,7 @@
   var anchor = $('stroke').closest('.f'); anchor.after(sw); $('size').closest('.f').after(fsel);
   var panel = el('<section class="memex"><h3>' + S.st + '</h3><p class="note">' + S.pv + '</p><div class="stagewrap"><canvas id="mstage" aria-label="preview"></canvas><p id="mpick" class="note">' + S.pick + '</p></div>' +
     '<p><label class="btn ghost" for="stk">' + S.add + '</label><input type="file" id="stk" accept="image/png,image/webp,image/jpeg,image/gif,image/*" multiple hidden></p><ul id="mlayers" class="mlayers"></ul><p class="note">' + S.hint + '</p></section>');
-  box.querySelector('.form').after(panel);
+  box.querySelector('.form').after(panel); box.classList.add('memecard');
   // ── 字型載入（含進度） ──
   var loaded = {}, st = $('mfontst');
   function loadFont(id) {
@@ -58,7 +58,7 @@
   var cv = $('mstage'), k = 1;
   function draw() {
     if (!base) { cv.hidden = true; return; } cv.hidden = false; $('mpick').hidden = true;
-    var W = base.naturalWidth, H = base.naturalHeight, dpr = window.devicePixelRatio || 1, maxW = cv.parentNode.clientWidth || 600, maxH = Math.max(240, window.innerHeight * 0.6);
+    var W = base.naturalWidth, H = base.naturalHeight, dpr = window.devicePixelRatio || 1, maxW = (cv.parentNode.clientWidth || 616) - 16, maxH = Math.max(220, Math.min(window.innerHeight * 0.7, window.innerHeight - 190));
     var dw = Math.min(maxW, maxH * W / H), dh = dw * H / W; cv.style.width = dw + 'px'; cv.style.height = dh + 'px';
     cv.width = Math.round(dw * dpr); cv.height = Math.round(dh * dpr); k = cv.width / W;
     var g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.drawImage(base, 0, 0); paintOn(g, W, H);

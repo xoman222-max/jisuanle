@@ -43,10 +43,13 @@
     }
     return out;
   }
+  // 預覽尺寸由 JS 明確計算，確保整張圖一定在畫面內（各瀏覽器一致）
+  function fitCmp() { var b = $('cmp'), box = b && b.querySelector('.cmp'), r = window.__upscaleResult; if (!box || !r || b.hidden) return; var cw = box.parentNode.clientWidth || 600, mh = Math.max(200, window.innerHeight * 0.7), w = Math.min(cw, mh * r.width / r.height); box.style.width = Math.floor(w) + 'px'; box.classList.add('sized'); }
+  window.addEventListener('resize', fitCmp);
   function show(c) {
     var url = c.toDataURL('image/png'); $('after').src = url; $('before').src = canvasOf(src, c.width, c.height).toDataURL('image/jpeg', 0.9);
     $('cmp').hidden = false; c.toBlob(function (b) { $('full').href = URL.createObjectURL(b); }); $('dlpng').href = url; $('dljpg').href = c.toDataURL('image/jpeg', 0.92);
-    msg(t.done + '：' + c.width + ' × ' + c.height + (backend && $('mode').value === 'ai' ? '（' + backend + '）' : '')); window.__upscaleResult = { width: c.width, height: c.height };
+    msg(t.done + '：' + c.width + ' × ' + c.height + (backend && $('mode').value === 'ai' ? '（' + backend + '）' : '')); window.__upscaleResult = { width: c.width, height: c.height }; fitCmp();
   }
   $('mode').addEventListener('change', function () { $('basicOpts').style.display = this.value === 'ai' ? 'none' : 'contents'; });
   $('go').addEventListener('click', async function () {
