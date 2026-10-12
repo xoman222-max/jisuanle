@@ -23,7 +23,7 @@
     var r = RATE[summer ? 'summer' : 'non'], prev = 0, total = 0, rows = [];
     for (var i = 0; i < TIERS.length; i++) {
       var cap = TIERS[i] * months, use = Math.max(0, Math.min(kwh, cap) - prev);
-      if (use > 0) { total += use * r[i]; rows.push([prev + 1 + '–' + (cap === Infinity ? '以上' : cap) + ' 度', fmt(use) + ' 度 × ' + r[i].toFixed(2) + ' = ' + fmt(use * r[i], 2) + ' 元']); }
+      if (use > 0) { total += use * r[i]; var f2 = function (x) { return Number(x).toLocaleString('zh-TW', { maximumFractionDigits: 2 }); }; rows.push(['第 ' + (i + 1) + ' 段（' + (cap === Infinity ? f2(prev) + ' 度以上' : f2(prev) + '–' + f2(cap) + ' 度') + '）', f2(use) + ' 度 × ' + r[i].toFixed(2) + ' = ' + fmt(use * r[i], 2) + ' 元']); }
       prev = cap; if (kwh <= cap) break;
     }
     return { total: total, rows: rows };
@@ -50,7 +50,21 @@
     return { L: L, daily: daily, hourly: hourly, units: units, ded: Math.round(ded), net: monthly - Math.round(ded), note: note };
   }
 
-  var api = { checkInvoice: checkInvoice, parseNums: parseNums, power: power, leave: leave, LEAVE: LEAVE };
+  // 依台電營業規章第36、37條：計費期間跨夏月／非夏月時，按使用日數比例分攤度數（各段級距同比例分攤），
+  // 等同於「整期度數分別以夏月、非夏月計算，再依日數比例加權」。電費計至角位、分位以下捨棄，總額四捨五入到元。
+  function parseD(s) { var m = String(s || '').match(/^(\d{3,4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/); if (!m) return null; var y = +m[1]; if (y < 1000) y += 1911; return Date.UTC(y, m[2] - 1, +m[3]); }
+  function powerDates(kwh, months, start, end) {
+    var a = parseD(start), b = parseD(end); if (a === null || b === null || b < a) return null;
+    var D = Math.round((b - a) / 864e5) + 1, sd = 0;
+    for (var t = a; t <= b; t += 864e5) { var mo = new Date(t).getUTCMonth() + 1; if (mo >= 6 && mo <= 9) sd++; }
+    var segs = [], total = 0;
+    [[true, sd], [false, D - sd]].forEach(function (g) {
+      if (!g[1]) return; var share = g[1] / D, r = power(kwh * share, months * share, g[0]);
+      var amt = Math.floor(r.total * 10 + 1e-6) / 10; total += amt; segs.push({ summer: g[0], days: g[1], kwh: kwh * share, amount: amt, rows: r.rows });
+    });
+    return { days: D, summerDays: sd, segs: segs, total: total, bill: Math.round(total) };
+  }
+  var api = { powerDates: powerDates, checkInvoice: checkInvoice, parseNums: parseNums, power: power, leave: leave, LEAVE: LEAVE };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   root.TWLIFE = api;
 
@@ -87,8 +101,15 @@
     if (tool === 'power') {
       var kwh = n('kwh'), months = $('billing').value === '2' ? 2 : 1, summer = $('season').value === 'summer';
       if (!(kwh > 0)) { out.innerHTML = ''; return; }
+      var pd = powerDates(kwh, months, ($('pstart') || {}).value, ($('pend') || {}).value), extra = n('pextra');
+      if (pd) {
+        var rr = [['計費期間', pd.days + ' 天（夏月 ' + pd.summerDays + ' 天、非夏月 ' + (pd.days - pd.summerDays) + ' 天）']];
+        pd.segs.forEach(function (g) { rr.push([(g.summer ? '夏月段' : '非夏月段') + '（' + g.days + ' 天）', fmt(g.kwh, 2) + ' 度 → ' + fmt(g.amount, 1) + ' 元']); g.rows.forEach(function (x) { rr.push(['　' + x[0], x[1]]); }); });
+        rr.push(['流動電費', fmt(pd.bill) + ' 元']); if (extra) rr.push(['其他費用（公設分攤等）', fmt(extra) + ' 元']); rr.push(['平均每度', fmt((pd.bill + extra) / kwh, 2) + ' 元']);
+        out.innerHTML = big('應繳電費（約）', fmt(pd.bill + extra) + ' 元') + kv(rr); return;
+      }
       var r = power(kwh, months, summer), other = power(kwh, months, !summer);
-      out.innerHTML = big('應繳電費（約）', fmt(Math.round(r.total)) + ' 元') + kv([['計費方式', (months === 2 ? '2 個月一期（各段度數加倍）' : '單月') + '｜' + (summer ? '夏月 6/1–9/30' : '非夏月')], ['平均每度', fmt(r.total / kwh, 2) + ' 元'], ['若在' + (summer ? '非夏月' : '夏月'), fmt(Math.round(other.total)) + ' 元']].concat(r.rows));
+      var ex2 = n('pextra'); out.innerHTML = big('應繳電費（約）', fmt(Math.round(r.total) + ex2) + ' 元') + (ex2 ? kv([['其中其他費用（公設分攤等）', fmt(ex2) + ' 元']]) : '') + kv([['計費方式', (months === 2 ? '2 個月一期（各段度數加倍）' : '單月') + '｜' + (summer ? '夏月 6/1–9/30' : '非夏月')], ['平均每度', fmt(r.total / kwh, 2) + ' 元'], ['若在' + (summer ? '非夏月' : '夏月'), fmt(Math.round(other.total)) + ' 元']].concat(r.rows));
     } else if (tool === 'leave2') {
       var m = n('monthly'); if (!(m > 0)) { out.innerHTML = ''; return; }
       var r2 = leave(m, $('ltype').value, n('days'), n('hours'), n('used'));
