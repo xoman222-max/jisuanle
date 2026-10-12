@@ -124,8 +124,14 @@ function jsqrMulti(jsQR, d, W, H) {
     }).catch(function () { return []; });
   }
   var KEY = 'jsl.scanCam';
-  function save(id) { try { if (id) localStorage.setItem(KEY, id); } catch (e) {} }
-  function saved() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function save() { try { var t = stream && stream.getVideoTracks()[0], st = t && t.getSettings ? t.getSettings() : {}; if (st.deviceId) localStorage.setItem(KEY, JSON.stringify({ id: st.deviceId, label: t.label || '', g: st.groupId || '' })); } catch (e) {} }
+  function saved() { try { var v = localStorage.getItem(KEY); if (!v) return null; return v.charAt(0) === '{' ? JSON.parse(v) : { id: v, label: '', g: '' }; } catch (e) { return null; } }
+  // 畫面真的有影格後才拿掉遮罩，避免閃一下
+  function reveal() {
+    var wrap = $('scanwrap'), done = function () { wrap.classList.remove('loading'); };
+    var f = function () { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(function () { requestAnimationFrame(done); }); else requestAnimationFrame(function () { requestAnimationFrame(done); }); };
+    if (video.readyState >= 3 && !video.paused) f(); else video.addEventListener('playing', f, { once: true });
+  }
   // 先開新鏡頭、成功後才關舊的；有些手機不能同時開兩顆，失敗時再先關舊的
   function swap(id, old) {
     return open({ deviceId: { exact: id } }).catch(function () {
@@ -135,7 +141,7 @@ function jsqrMulti(jsQR, d, W, H) {
   }
   function useCam(id) {
     var old = stream; $('scanwrap').classList.add('loading');
-    return swap(id, old).then(function (ns) { setup(ns); save(id); }).catch(function () { $('scanwrap').classList.remove('loading'); msg.textContent = '這個鏡頭無法開啟，請再按一次「切換鏡頭」'; if (old && old.active) setup(old); });
+    return swap(id, old).then(function (ns) { setup(ns); }).catch(function () { $('scanwrap').classList.remove('loading'); msg.textContent = '這個鏡頭無法開啟，請再按一次「切換鏡頭」'; if (old && old.active) setup(old); });
   }
   function controls() {
     if (ctl) return ctl;
@@ -149,14 +155,15 @@ function jsqrMulti(jsQR, d, W, H) {
     var el = $(id); $(lab).hidden = false; el.min = c.min; el.max = c.max; el.step = c.step || (c.max - c.min) / 100; el.value = val; el.oninput = function () { fn(+el.value); };
   }
   function setup(s) {
-    stream = s; var wrap = $('scanwrap'); video.onplaying = function () { wrap.classList.remove('loading'); }; video.srcObject = s; video.hidden = false; wrap.hidden = false; save(curId()); lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
+    stream = s; var wrap = $('scanwrap'); if (video.srcObject !== s) { wrap.classList.add('loading'); video.srcObject = s; } video.hidden = false; wrap.hidden = false; save(); lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
     msg.textContent = '掃描中…請把發票左邊的 QR 對準框內，距離約 10–15 公分';
     controls(); ctl.hidden = false; $('scanzoomL').hidden = $('scanfdL').hidden = true; torchBtn.hidden = true; torchBtn.on = false; torchBtn.textContent = '🔦 開啟手電筒';
     var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, st = tr.getSettings ? tr.getSettings() : {}, fm = cap.focusMode || [];
     var ap = function (o) { return tr.applyConstraints({ advanced: [o] }).catch(function () {}); };
     // 有些手機會忽略初始條件裡的 focusMode，所以串流開始後再套一次
     var cont = function () { if (fm.indexOf('continuous') >= 0 && (tr.getSettings ? tr.getSettings() : {}).focusMode !== 'continuous') return ap({ focusMode: 'continuous' }); return Promise.resolve(); };
-    setTimeout(cont, 300);
+    // 對焦模式在遮罩後面先套好（只改 focusMode，不動解析度），再顯示畫面
+    cont().then(reveal);
     if (cap.zoom && cap.zoom.max > cap.zoom.min) { var z0 = Math.min(cap.zoom.max, Math.max(cap.zoom.min, st.zoom || 1)); slider('scanzoom', 'scanzoomL', cap.zoom, z0, function (v) { ap({ zoom: v }); }); }
     if (cap.focusDistance && fm.indexOf('continuous') < 0 && cap.focusDistance.max > cap.focusDistance.min) slider('scanfd', 'scanfdL', cap.focusDistance, st.focusDistance || cap.focusDistance.min, function (v) { ap({ focusMode: 'manual', focusDistance: v }); });
     video.onclick = function (ev) {
@@ -182,17 +189,22 @@ function jsqrMulti(jsQR, d, W, H) {
     // 直接在點擊當下呼叫 getUserMedia，不先 await，確保瀏覽器會跳出權限詢問
     var wrap = $('scanwrap'), sv = saved(), env = { facingMode: { ideal: 'environment' } };
     wrap.classList.add('loading'); wrap.hidden = false; video.hidden = false;
-    (sv ? open({ deviceId: { exact: sv } }).catch(function (e) { if (e && e.name === 'NotAllowedError') throw e; return open(env); }) : open(env)).then(function (s) {
-      if (sv) return s;
-      // 第一次：Android 常預設超廣角鏡頭（近距離無法對焦），先在遮罩後面換到主鏡頭再顯示畫面
+    // 只呼叫一次 getUserMedia；之後只有在目前是超廣角等非主鏡頭時才在遮罩後面換鏡頭
+    (sv ? open({ deviceId: { exact: sv.id } }).catch(function (e) { if (e && e.name === 'NotAllowedError') throw e; return open(env); }) : open(env)).then(function (s) {
       stream = s;
       return listRear().then(function (cams) {
-        var cur = curId(), curCam = cams.filter(function (c) { return c.deviceId === cur; })[0], good = cams.filter(function (c) { return !BAD.test(c.label); });
-        if (isAnd && curCam && BAD.test(curCam.label) && good.length) return swap(good[0].deviceId, s).catch(function () { return s.active ? s : open(env); });
-        return s;
+        var t = s.getVideoTracks()[0], cur = curId(), lbl = t.label || '';
+        var curCam = cams.filter(function (c) { return c.deviceId === cur; })[0] || { label: lbl };
+        if (sv && sv.label && lbl === sv.label) return s;           // 已經是上次那顆
+        var bad = BAD.test(curCam.label);
+        if (!bad && !(sv && sv.label)) return s;                       // 目前就是主鏡頭
+        var pref = sv && cams.filter(function (c) { return (c.label && c.label === sv.label) || (sv.g && c.groupId === sv.g && !BAD.test(c.label)); })[0];
+        var good = pref || (isAnd && bad ? cams.filter(function (c) { return !BAD.test(c.label); })[0] : null);
+        if (!good || good.deviceId === cur) return s;
+        return swap(good.deviceId, s).catch(function () { return s.active ? s : open(env); });
       });
     }).then(function (s) {
-      setup(s); listRear();
+      setup(s);
     }).catch(function (e) {
       $('scanwrap').classList.remove('loading'); $('scanwrap').hidden = true; video.hidden = true;
       var n = e && e.name;

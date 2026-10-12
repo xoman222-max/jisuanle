@@ -172,10 +172,11 @@ body main .hero nav.switch a,body main .hero nav.switch a:visited{padding:.45rem
 /* 發票掃描 */
 .scanbtns{display:flex;flex-wrap:wrap;gap:.5rem}.scanbtns button,.scanbtns .scanpick{width:auto;margin:0}
 .scanpick{display:inline-flex;align-items:center;padding:.6rem 1rem;border-radius:var(--pico-border-radius);background:var(--pico-secondary-background,#64748b);color:#fff;cursor:pointer}
-#scanvid{width:100%;max-height:60vh;object-fit:cover;border-radius:.8rem;margin-top:.8rem;background:#000}
+
 #scanmsg{margin:.6rem 0 .2rem;font-weight:600}
 .scanrow{display:flex;justify-content:space-between;gap:.6rem;padding:.5rem .2rem;border-bottom:1px solid var(--pico-muted-border-color)}.scanrow small{display:block;color:var(--pico-muted-color)}.scanrow.win{background:rgba(250,204,21,.18)}
 #scanhelp{border:2px solid #f59e0b;margin:.8rem 0}#scanhelp details{margin:.3rem 0}#scanhint{margin:.4rem 0}
 #scanwrap{position:relative;max-width:640px;margin:.6rem auto}#scanwrap video{width:100%;display:block;border-radius:8px}.scanframe{position:absolute;left:30%;top:10%;width:40%;height:80%;border:3px solid #22c55e;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}.scantip{position:absolute;left:0;right:0;bottom:.3rem;margin:0;text-align:center;color:#fff;font-size:.9rem;text-shadow:0 1px 3px #000}
 #scanctl{max-width:640px;margin:.3rem auto;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}#scanctl>*{margin:0}#scanctl label{flex:1 1 200px}#scanvid{cursor:crosshair}
 #scanwrap.loading{min-height:200px;background:#111;border-radius:8px}#scanwrap.loading video,#scanwrap.loading .scanframe,#scanwrap.loading .scantip{visibility:hidden}#scanwrap.loading::after{content:"開啟相機中…";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff}
+#scanwrap{aspect-ratio:4/3;background:#000;border-radius:8px;overflow:hidden}#scanwrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;border-radius:0;transition:none}#scanwrap.loading{min-height:0;background:#000}@media (orientation:portrait) and (max-width:700px){#scanwrap{aspect-ratio:3/4}}
