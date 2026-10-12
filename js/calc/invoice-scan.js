@@ -73,20 +73,50 @@
     else timer = setTimeout(loop, 250);
   }
   function stop() { clearTimeout(timer); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; video.hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; }
-  $('scanstart').addEventListener('click', function () {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg.textContent = '這個瀏覽器無法開啟相機，請改用「選擇照片」。'; return; }
-    msg.textContent = '開啟相機中…';
+  var ua = navigator.userAgent || '', inApp = /Line\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|; wv\)/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), isAnd = /Android/i.test(ua);
+  var STEPS = {
+    app: ['LINE／FB／IG 內建瀏覽器', '內建瀏覽器常常不能開相機。請點右上角「⋯」或「分享」→ 選「用預設瀏覽器開啟」（Safari 或 Chrome），再按一次「開啟相機掃描」。'],
+    ios: ['iPhone／iPad（Safari）', '① 點網址列左側的「大小」或「aA」圖示 → ② 點「網站設定」→ ③「相機」選「允許」→ ④ 回來按「重新嘗試」。<br>若沒有這個選項：打開手機「設定」App → Safari → 相機 → 選「詢問」或「允許」。'],
+    and: ['Android（Chrome）', '① 點網址列左邊的「鎖頭」或「設定」圖示 → ② 點「權限」→ ③「相機」選「允許」→ ④ 回來按「重新嘗試」。'],
+    pc: ['電腦（Chrome／Edge）', '① 點網址列左邊的圖示（鎖頭或相機）→ ② 「相機」改成「允許」→ ③ 重新整理網頁，再按「開啟相機掃描」。']
+  };
+  function help(reason) {
+    var order = inApp ? ['app', isIOS ? 'ios' : isAnd ? 'and' : 'pc'] : isIOS ? ['ios', 'and', 'pc'] : isAnd ? ['and', 'ios', 'pc'] : ['pc', 'ios', 'and'];
+    var h = $('scanhelp'), html = '<p><b>' + reason + '</b></p><p>最簡單的方法：按下方「📸 改用拍照」，用手機拍一張發票左邊的 QR Code 就能對獎，<b>不需要開相機權限</b>。</p>';
+    if (reason.indexOf('沒有偵測到相機') < 0) html += order.map(function (k, i) { return i ? '<details><summary>' + STEPS[k][0] + '</summary><p>' + STEPS[k][1] + '</p></details>' : '<p><b>想用即時掃描，請照這樣開啟相機（' + STEPS[k][0] + '）：</b><br>' + STEPS[k][1] + '</p>'; }).join('');
+    html += '<div class="scanbtns"><label class="scanpick" role="button">📸 改用拍照<input type="file" class="scanalt" accept="image/*" capture="environment" hidden></label><button type="button" class="secondary scanretry">🔄 重新嘗試</button><button type="button" class="secondary outline scanclose">關閉</button></div>';
+    h.innerHTML = html; h.hidden = false; h.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    h.querySelector('.scanretry').onclick = function () { h.hidden = true; start(); };
+    h.querySelector('.scanclose').onclick = function () { h.hidden = true; };
+    h.querySelector('.scanalt').onchange = function () { h.hidden = true; pick(this); };
+    msg.textContent = '';
+  }
+  function start() {
+    $('scanhelp').hidden = true;
+    if (inApp && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return help('你正在 App 內建瀏覽器中，無法開啟相機。');
+    if (!root.isSecureContext) return help('目前網址不是安全連線（https），瀏覽器不允許開相機。');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return help(inApp ? '你正在 App 內建瀏覽器中，無法開啟相機。' : '這個瀏覽器不支援開啟相機。');
+    msg.textContent = '開啟相機中…若跳出詢問視窗，請按「允許」';
+    // 直接在點擊當下呼叫 getUserMedia，不先 await，確保瀏覽器會跳出權限詢問
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }).then(function (s) {
       stream = s; video.srcObject = s; video.hidden = false; video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
       msg.textContent = '把發票「左邊」的 QR Code 對準畫面，可連續掃多張';
       var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {};
       if (cap.torch) { torchBtn.hidden = false; torchBtn.onclick = function () { torchBtn.on = !torchBtn.on; tr.applyConstraints({ advanced: [{ torch: torchBtn.on }] }).catch(function () {}); torchBtn.textContent = torchBtn.on ? '🔦 關閉手電筒' : '🔦 開啟手電筒'; }; }
       loop();
-    }).catch(function () { msg.textContent = '無法開啟相機（可能未允許相機權限），請到瀏覽器設定允許，或改用「選擇照片」。'; });
-  });
+    }).catch(function (e) {
+      var n = e && e.name;
+      if (n === 'NotFoundError' || n === 'OverconstrainedError' || n === 'DevicesNotFoundError') help('沒有偵測到相機。');
+      else if (n === 'NotReadableError' || n === 'TrackStartError') help('相機正被其他 App 使用中，請先關掉其他用到相機的 App 再重新嘗試。');
+      else if (inApp) help('你正在 App 內建瀏覽器中，相機被擋住了。');
+      else help('相機權限被拒絕或被封鎖了。');
+    });
+  }
+  $('scanstart').addEventListener('click', start);
   $('scanstop').addEventListener('click', stop);
-  $('scanfile').addEventListener('change', function () {
-    var files = [].slice.call(this.files || []); this.value = '';
+  function pick(inp) {
+    var files = [].slice.call(inp.files || []); inp.value = '';
     files.reduce(function (pr, f) {
       return pr.then(function () {
         return new Promise(function (ok) {
@@ -95,7 +125,9 @@
         });
       });
     }, Promise.resolve());
-  });
+  }
+  $('scanfile').addEventListener('change', function () { pick(this); });
+  if ($('scancap')) $('scancap').addEventListener('change', function () { pick(this); });
   $('scanclear').addEventListener('click', function () { seen = {}; total = 0; count = 0; list.innerHTML = ''; $('scansum').textContent = ''; msg.textContent = ''; });
   document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); });
 })(this);

@@ -3,7 +3,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: SAMEORIGIN
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), interest-cohort=()
   Strict-Transport-Security: max-age=31536000
 
 # HTML 以 ?v=<內容雜湊> 引用；仍保守短快取，避免舊 HTML 配新檔

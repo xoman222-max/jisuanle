@@ -175,3 +175,4 @@ body main .hero nav.switch a,body main .hero nav.switch a:visited{padding:.45rem
 #scanvid{width:100%;max-height:60vh;object-fit:cover;border-radius:.8rem;margin-top:.8rem;background:#000}
 #scanmsg{margin:.6rem 0 .2rem;font-weight:600}
 .scanrow{display:flex;justify-content:space-between;gap:.6rem;padding:.5rem .2rem;border-bottom:1px solid var(--pico-muted-border-color)}.scanrow small{display:block;color:var(--pico-muted-color)}.scanrow.win{background:rgba(250,204,21,.18)}
+#scanhelp{border:2px solid #f59e0b;margin:.8rem 0}#scanhelp details{margin:.3rem 0}#scanhint{margin:.4rem 0}
