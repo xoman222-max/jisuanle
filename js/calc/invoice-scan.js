@@ -123,9 +123,19 @@ function jsqrMulti(jsQR, d, W, H) {
       return rear;
     }).catch(function () { return []; });
   }
+  var KEY = 'jsl.scanCam';
+  function save(id) { try { if (id) localStorage.setItem(KEY, id); } catch (e) {} }
+  function saved() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  // 先開新鏡頭、成功後才關舊的；有些手機不能同時開兩顆，失敗時再先關舊的
+  function swap(id, old) {
+    return open({ deviceId: { exact: id } }).catch(function () {
+      if (old) old.getTracks().forEach(function (t) { t.stop(); });
+      return open({ deviceId: { exact: id } });
+    }).then(function (ns) { if (old && old !== ns) old.getTracks().forEach(function (t) { t.stop(); }); return ns; });
+  }
   function useCam(id) {
-    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
-    return open({ deviceId: { exact: id } }).then(setup).catch(function () { msg.textContent = '這個鏡頭無法開啟，請再按一次「切換鏡頭」'; });
+    var old = stream; $('scanwrap').classList.add('loading');
+    return swap(id, old).then(function (ns) { setup(ns); save(id); }).catch(function () { $('scanwrap').classList.remove('loading'); msg.textContent = '這個鏡頭無法開啟，請再按一次「切換鏡頭」'; if (old && old.active) setup(old); });
   }
   function controls() {
     if (ctl) return ctl;
@@ -139,13 +149,13 @@ function jsqrMulti(jsQR, d, W, H) {
     var el = $(id); $(lab).hidden = false; el.min = c.min; el.max = c.max; el.step = c.step || (c.max - c.min) / 100; el.value = val; el.oninput = function () { fn(+el.value); };
   }
   function setup(s) {
-    stream = s; video.srcObject = s; video.hidden = false; $('scanwrap').hidden = false; lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
+    stream = s; var wrap = $('scanwrap'); video.onplaying = function () { wrap.classList.remove('loading'); }; video.srcObject = s; video.hidden = false; wrap.hidden = false; save(curId()); lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
     msg.textContent = '掃描中…請把發票左邊的 QR 對準框內，距離約 10–15 公分';
     controls(); ctl.hidden = false; $('scanzoomL').hidden = $('scanfdL').hidden = true; torchBtn.hidden = true; torchBtn.on = false; torchBtn.textContent = '🔦 開啟手電筒';
     var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, st = tr.getSettings ? tr.getSettings() : {}, fm = cap.focusMode || [];
     var ap = function (o) { return tr.applyConstraints({ advanced: [o] }).catch(function () {}); };
     // 有些手機會忽略初始條件裡的 focusMode，所以串流開始後再套一次
-    var cont = function () { if (fm.indexOf('continuous') >= 0) return ap({ focusMode: 'continuous' }); return Promise.resolve(); };
+    var cont = function () { if (fm.indexOf('continuous') >= 0 && (tr.getSettings ? tr.getSettings() : {}).focusMode !== 'continuous') return ap({ focusMode: 'continuous' }); return Promise.resolve(); };
     setTimeout(cont, 300);
     if (cap.zoom && cap.zoom.max > cap.zoom.min) { var z0 = Math.min(cap.zoom.max, Math.max(cap.zoom.min, st.zoom || 1)); slider('scanzoom', 'scanzoomL', cap.zoom, z0, function (v) { ap({ zoom: v }); }); }
     if (cap.focusDistance && fm.indexOf('continuous') < 0 && cap.focusDistance.max > cap.focusDistance.min) slider('scanfd', 'scanfdL', cap.focusDistance, st.focusDistance || cap.focusDistance.min, function (v) { ap({ focusMode: 'manual', focusDistance: v }); });
@@ -170,15 +180,21 @@ function jsqrMulti(jsQR, d, W, H) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return help(inApp ? '你正在 App 內建瀏覽器中，無法開啟相機。' : '這個瀏覽器不支援開啟相機。');
     msg.textContent = '開啟相機中…若跳出詢問視窗，請按「允許」';
     // 直接在點擊當下呼叫 getUserMedia，不先 await，確保瀏覽器會跳出權限詢問
-    open({ facingMode: { ideal: 'environment' } }).then(function (s) {
-      setup(s);
-      // Android 常預設超廣角鏡頭（近距離無法對焦）：取得權限後列出後鏡頭，改用主鏡頭
-      listRear().then(function (cams) {
-        var cur = curId(), bad = /wide|ultra|tele|depth|macro|超廣|廣角|長焦|望遠|微距|景深/i, good = cams.filter(function (c) { return !bad.test(c.label); });
-        var curCam = cams.filter(function (c) { return c.deviceId === cur; })[0];
-        if (isAnd && curCam && bad.test(curCam.label) && good.length) useCam(good[0].deviceId);
+    var wrap = $('scanwrap'), sv = saved(), env = { facingMode: { ideal: 'environment' } };
+    wrap.classList.add('loading'); wrap.hidden = false; video.hidden = false;
+    (sv ? open({ deviceId: { exact: sv } }).catch(function (e) { if (e && e.name === 'NotAllowedError') throw e; return open(env); }) : open(env)).then(function (s) {
+      if (sv) return s;
+      // 第一次：Android 常預設超廣角鏡頭（近距離無法對焦），先在遮罩後面換到主鏡頭再顯示畫面
+      stream = s;
+      return listRear().then(function (cams) {
+        var cur = curId(), curCam = cams.filter(function (c) { return c.deviceId === cur; })[0], good = cams.filter(function (c) { return !BAD.test(c.label); });
+        if (isAnd && curCam && BAD.test(curCam.label) && good.length) return swap(good[0].deviceId, s).catch(function () { return s.active ? s : open(env); });
+        return s;
       });
+    }).then(function (s) {
+      setup(s); listRear();
     }).catch(function (e) {
+      $('scanwrap').classList.remove('loading'); $('scanwrap').hidden = true; video.hidden = true;
       var n = e && e.name;
       if (n === 'NotFoundError' || n === 'OverconstrainedError' || n === 'DevicesNotFoundError') help('沒有偵測到相機。');
       else if (n === 'NotReadableError' || n === 'TrackStartError') help('相機正被其他 App 使用中，請先關掉其他用到相機的 App 再重新嘗試。');
