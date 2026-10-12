@@ -4,4 +4,8 @@
 /cn/image-tools /cn/image/ 301
 /upscale /image-upscaler/ 301
 /removebg /image/removebg/ 301
+/tool/remove-bg /image/removebg/ 301
+/tool/remove-bg/* /image/removebg/ 301
+/tool/removebg /image/removebg/ 301
+/tool/removebg/* /image/removebg/ 301
 # 註：www.jisuanle.com → jisuanle.com 屬於網域層級轉址，請在 Cloudflare「規則 → 重新導向規則」設定（見 DEPLOY-CLOUDFLARE.md）

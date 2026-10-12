@@ -272,6 +272,34 @@ async function rates(request, env, ctx) {
   } catch (e) { return json({ ok: false, error: 'rates_unavailable' }, 502); }
 }
 
+// ---------- 統一發票中獎號碼（財政部稅務入口網官方 RSS，Cache API 快取 6 小時） ----------
+function parseInvoiceRss(xml) {
+  const out = [];
+  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+    const it = m[1], cd = (tag) => { const x = it.match(new RegExp('<' + tag + '>\\s*(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?\\s*</' + tag + '>')); return x ? x[1].trim() : ''; };
+    const title = cd('title'), desc = cd('description'), link = cd('link');
+    const t = title.match(/(\d+)年\s*(\d+)~(\d+)月/); if (!t) continue;
+    const get = (k) => { const x = desc.match(new RegExp(k + '：([0-9、,\\s]+)')); return x ? x[1].split(/[、,\s]+/).filter((n) => /^\d{8}$/.test(n)) : []; };
+    const p = { id: t[1] + t[2].padStart(2, '0'), title: title, link: link, special: get('特別獎'), grand: get('特獎'), first: get('頭獎'), extra6: get('增開六獎').length ? get('增開六獎') : (desc.match(/增開六獎：([0-9、,\s]+)/) || ['', ''])[1].split(/[、,\s]+/).filter((n) => /^\d{3}$/.test(n)) };
+    if (p.special.length === 1 && p.grand.length === 1 && p.first.length >= 3) out.push(p);
+  }
+  return out;
+}
+async function invoice(request, env, ctx) {
+  const cache = caches.default, key = new Request('https://jisuanle.com/__invoice_cache_v1');
+  const hit = await cache.match(key);
+  if (hit) return new Response(hit.body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=1800', 'x-cache': 'HIT' } });
+  try {
+    const r = await fetch('https://invoice.etax.nat.gov.tw/invoice.xml', { cf: { cacheTtl: 21600 } });
+    const periods = parseInvoiceRss(await r.text());
+    if (!periods.length) throw new Error('bad source');
+    const body = JSON.stringify({ ok: true, source: 'https://invoice.etax.nat.gov.tw/invoice.xml', fetched: Date.now(), periods });
+    const resp = new Response(body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=21600' } });
+    ctx && ctx.waitUntil ? ctx.waitUntil(cache.put(key, resp.clone())) : await cache.put(key, resp.clone());
+    return new Response(body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=1800', 'x-cache': 'MISS' } });
+  } catch (e) { return json({ ok: false, error: 'invoice_unavailable' }, 502); }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -280,6 +308,7 @@ export default {
     if (url.pathname === '/api/meme-caption/quota') return memeQuota(env);
     if (url.pathname === '/api/translate/quota') return memeQuota(env, 'tr', TCAP(env));
     if (url.pathname === '/api/translate') return translate(request, env);
+    if (url.pathname === '/api/invoice') return invoice(request, env, ctx);
     if (url.pathname === '/api/rates') return rates(request, env, ctx);
     if (url.pathname === '/api/meme-caption') return memeCaption(request, env, ctx);
     if (url.pathname.startsWith('/api/')) return json({ ok: false, error: 'not_found' }, 404);
