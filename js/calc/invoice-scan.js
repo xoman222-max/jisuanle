@@ -34,7 +34,7 @@ function jsqrMulti(jsQR, d, W, H) {
   root.INVSCAN = { parseScan: parseScan };
   var box = document.getElementById('scanbox'); if (!box || !root.TWLIFE) return;
   var T = root.TWLIFE, $ = function (id) { return document.getElementById(id); };
-  var lastHit = 0, hintAt = 0, video = $('scanvid'), list = $('scanlist'), msg = $('scanmsg'), torchBtn = $('scantorch'), stream = null, timer = null, seen = {}, total = 0, count = 0, det = null, jsqrP = null, flip = 0;
+  var sess = 0, starting = false, lastHit = 0, hintAt = 0, video = $('scanvid'), list = $('scanlist'), msg = $('scanmsg'), torchBtn = $('scantorch'), stream = null, timer = null, seen = {}, total = 0, count = 0, det = null, jsqrP = null, flip = 0;
   var cvs = document.createElement('canvas'), ctx = cvs.getContext('2d', { willReadFrequently: true });
   function fmt(n) { return Number(n).toLocaleString('zh-TW'); }
   function loadJsQR() {
@@ -91,7 +91,7 @@ function jsqrMulti(jsQR, d, W, H) {
     if (video.readyState >= 2 && video.videoWidth) decode(video, video.videoWidth, video.videoHeight, false).then(handle).catch(function () {}).then(function () { timer = setTimeout(loop, 120); });
     else timer = setTimeout(loop, 200);
   }
-  function stop() { clearTimeout(timer); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; if (ctl) ctl.hidden = true; }
+  function stop() { clearTimeout(timer); sess++; starting = false; if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; resetVideo(); video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; if (ctl) ctl.hidden = true; }
   var ua = navigator.userAgent || '', inApp = /Line\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|; wv\)/i.test(ua);
   var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), isAnd = /Android/i.test(ua);
   var STEPS = {
@@ -127,10 +127,12 @@ function jsqrMulti(jsQR, d, W, H) {
   function save() { try { var t = stream && stream.getVideoTracks()[0], st = t && t.getSettings ? t.getSettings() : {}; if (st.deviceId) localStorage.setItem(KEY, JSON.stringify({ id: st.deviceId, label: t.label || '', g: st.groupId || '' })); } catch (e) {} }
   function saved() { try { var v = localStorage.getItem(KEY); if (!v) return null; return v.charAt(0) === '{' ? JSON.parse(v) : { id: v, label: '', g: '' }; } catch (e) { return null; } }
   // 畫面真的有影格後才拿掉遮罩，避免閃一下
+  // 停止後把 video 完全清空並蓋回遮罩，下一次開啟跟第一次一模一樣
+  function resetVideo() { video.onplaying = null; try { video.pause(); } catch (e) {} video.srcObject = null; video.removeAttribute('src'); try { video.load(); } catch (e) {} $('scanwrap').classList.add('loading'); }
   function reveal() {
-    var wrap = $('scanwrap'), done = function () { wrap.classList.remove('loading'); };
+    var my = sess, wrap = $('scanwrap'), done = function () { if (my === sess && stream) wrap.classList.remove('loading'); };
     var f = function () { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(function () { requestAnimationFrame(done); }); else requestAnimationFrame(function () { requestAnimationFrame(done); }); };
-    if (video.readyState >= 3 && !video.paused) f(); else video.addEventListener('playing', f, { once: true });
+    if (video.readyState >= 3 && !video.paused) f(); else video.onplaying = function () { video.onplaying = null; if (my === sess) f(); };
   }
   // 先開新鏡頭、成功後才關舊的；有些手機不能同時開兩顆，失敗時再先關舊的
   function swap(id, old) {
@@ -181,12 +183,14 @@ function jsqrMulti(jsQR, d, W, H) {
     clearTimeout(timer); loop();
   }
   function start() {
+    if (starting || stream) return;
     $('scanhelp').hidden = true;
     if (inApp && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return help('你正在 App 內建瀏覽器中，無法開啟相機。');
     if (!root.isSecureContext) return help('目前網址不是安全連線（https），瀏覽器不允許開相機。');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return help(inApp ? '你正在 App 內建瀏覽器中，無法開啟相機。' : '這個瀏覽器不支援開啟相機。');
     msg.textContent = '開啟相機中…若跳出詢問視窗，請按「允許」';
     // 直接在點擊當下呼叫 getUserMedia，不先 await，確保瀏覽器會跳出權限詢問
+    starting = true; sess++; var my = sess; resetVideo();
     var wrap = $('scanwrap'), sv = saved(), env = { facingMode: { ideal: 'environment' } };
     wrap.classList.add('loading'); wrap.hidden = false; video.hidden = false;
     // 只呼叫一次 getUserMedia；之後只有在目前是超廣角等非主鏡頭時才在遮罩後面換鏡頭
@@ -204,8 +208,12 @@ function jsqrMulti(jsQR, d, W, H) {
         return swap(good.deviceId, s).catch(function () { return s.active ? s : open(env); });
       });
     }).then(function (s) {
+      starting = false;
+      if (my !== sess) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
       setup(s);
     }).catch(function (e) {
+      starting = false; if (my !== sess) return;
+      if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
       $('scanwrap').classList.remove('loading'); $('scanwrap').hidden = true; video.hidden = true;
       var n = e && e.name;
       if (n === 'NotFoundError' || n === 'OverconstrainedError' || n === 'DevicesNotFoundError') help('沒有偵測到相機。');
@@ -229,6 +237,7 @@ function jsqrMulti(jsQR, d, W, H) {
   }
   $('scanfile').addEventListener('change', function () { pick(this); });
   if ($('scancap')) $('scancap').addEventListener('change', function () { pick(this); });
-  $('scanclear').addEventListener('click', function () { seen = {}; total = 0; count = 0; list.innerHTML = ''; $('scansum').textContent = ''; msg.textContent = ''; });
+  // 只清掉已掃的發票清單，不動相機設定與掃描狀態
+  $('scanclear').addEventListener('click', function () { seen = {}; total = 0; count = 0; list.innerHTML = ''; $('scansum').textContent = ''; if (!stream) msg.textContent = ''; this.blur(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); });
 })(this);
