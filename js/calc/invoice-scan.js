@@ -129,10 +129,26 @@ function jsqrMulti(jsQR, d, W, H) {
   // 畫面真的有影格後才拿掉遮罩，避免閃一下
   // 停止後把 video 完全清空並蓋回遮罩，下一次開啟跟第一次一模一樣
   function resetVideo() { video.onplaying = null; try { video.pause(); } catch (e) {} video.srcObject = null; video.removeAttribute('src'); try { video.load(); } catch (e) {} $('scanwrap').classList.add('loading'); }
+  function log() { try { console.log.apply(console, ['[scan]'].concat([].slice.call(arguments))); } catch (e) {} }
+  // 冷啟動的相機前幾格會過亮／過暗（自動曝光、白平衡暖機），等畫面亮度穩定才淡出遮罩
+  var lc = document.createElement('canvas'), lx = lc.getContext('2d', { willReadFrequently: true }); lc.width = 16; lc.height = 12;
+  function luma() { try { lx.drawImage(video, 0, 0, 16, 12); var d = lx.getImageData(0, 0, 16, 12).data, t = 0; for (var i = 0; i < d.length; i += 4) t += d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11; return t / 192; } catch (e) { return -1; } }
   function reveal() {
-    var my = sess, wrap = $('scanwrap'), done = function () { if (my === sess && stream) wrap.classList.remove('loading'); };
-    var f = function () { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(function () { requestAnimationFrame(done); }); else requestAnimationFrame(function () { requestAnimationFrame(done); }); };
-    if (video.readyState >= 3 && !video.paused) f(); else video.onplaying = function () { video.onplaying = null; if (my === sess) f(); };
+    var my = sess, wrap = $('scanwrap'), t0 = 0, prev = -1, calm = 0;
+    var done = function (why) { if (my === sess && stream) { log('reveal', why, Math.round(performance.now() - t0) + 'ms'); wrap.classList.remove('loading'); } };
+    var next = function (fn) { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(function () { fn(); }); else requestAnimationFrame(fn); };
+    var tick = function () {
+      if (my !== sess || !stream) return;
+      if (!t0) t0 = performance.now();
+      var l = luma();
+      if (l < 0) return done('nosample');
+      if (prev >= 0 && Math.abs(l - prev) < 3 && l > 8 && l < 245) calm++; else calm = 0;
+      prev = l;
+      if (calm >= 3) return requestAnimationFrame(function () { done('stable'); });
+      if (performance.now() - t0 > 700) return done('timeout');
+      next(tick);
+    };
+    if (video.readyState >= 3 && !video.paused) next(tick); else video.onplaying = function () { video.onplaying = null; if (my === sess) next(tick); };
   }
   // 先開新鏡頭、成功後才關舊的；有些手機不能同時開兩顆，失敗時再先關舊的
   function swap(id, old) {
@@ -163,9 +179,9 @@ function jsqrMulti(jsQR, d, W, H) {
     var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, st = tr.getSettings ? tr.getSettings() : {}, fm = cap.focusMode || [];
     var ap = function (o) { return tr.applyConstraints({ advanced: [o] }).catch(function () {}); };
     // 有些手機會忽略初始條件裡的 focusMode，所以串流開始後再套一次
-    var cont = function () { if (fm.indexOf('continuous') >= 0 && (tr.getSettings ? tr.getSettings() : {}).focusMode !== 'continuous') return ap({ focusMode: 'continuous' }); return Promise.resolve(); };
+    var cont = function () { if (fm.indexOf('continuous') >= 0 && (tr.getSettings ? tr.getSettings() : {}).focusMode !== 'continuous') { log('apply focusMode continuous'); return ap({ focusMode: 'continuous' }).then(function () { return true; }); } return Promise.resolve(false); };
     // 對焦模式在遮罩後面先套好（只改 focusMode，不動解析度），再顯示畫面
-    cont().then(reveal);
+    cont().then(function (did) { setTimeout(reveal, did ? 200 : 0); });
     if (cap.zoom && cap.zoom.max > cap.zoom.min) { var z0 = Math.min(cap.zoom.max, Math.max(cap.zoom.min, st.zoom || 1)); slider('scanzoom', 'scanzoomL', cap.zoom, z0, function (v) { ap({ zoom: v }); }); }
     if (cap.focusDistance && fm.indexOf('continuous') < 0 && cap.focusDistance.max > cap.focusDistance.min) slider('scanfd', 'scanfdL', cap.focusDistance, st.focusDistance || cap.focusDistance.min, function (v) { ap({ focusMode: 'manual', focusDistance: v }); });
     video.onclick = function (ev) {
@@ -199,12 +215,15 @@ function jsqrMulti(jsQR, d, W, H) {
       return listRear().then(function (cams) {
         var t = s.getVideoTracks()[0], cur = curId(), lbl = t.label || '';
         var curCam = cams.filter(function (c) { return c.deviceId === cur; })[0] || { label: lbl };
-        if (sv && sv.label && lbl === sv.label) return s;           // 已經是上次那顆
+        log('opened', JSON.stringify(lbl), sv ? 'saved=' + JSON.stringify(sv.label) : 'no saved', 'cams=' + cams.length);
+        if (sv && sv.label && lbl === sv.label) { log('keep: matches saved'); return s; }           // 已經是上次那顆
         var bad = BAD.test(curCam.label);
-        if (!bad && !(sv && sv.label)) return s;                       // 目前就是主鏡頭
+        if (!bad && !(sv && sv.label)) { log('keep: main lens'); return s; }
+        if (!bad && !lbl) { log('keep: no label'); return s; }                       // 目前就是主鏡頭
         var pref = sv && cams.filter(function (c) { return (c.label && c.label === sv.label) || (sv.g && c.groupId === sv.g && !BAD.test(c.label)); })[0];
         var good = pref || (isAnd && bad ? cams.filter(function (c) { return !BAD.test(c.label); })[0] : null);
-        if (!good || good.deviceId === cur) return s;
+        if (!good || good.deviceId === cur) { log('keep: no better lens'); return s; }
+        log('switch ->', JSON.stringify(good.label));
         return swap(good.deviceId, s).catch(function () { return s.active ? s : open(env); });
       });
     }).then(function (s) {
