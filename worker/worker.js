@@ -71,6 +71,7 @@ export class Stats extends DurableObject {
     this.sql.exec('CREATE TABLE IF NOT EXISTS days (day TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0, today TEXT, t INTEGER NOT NULL DEFAULT 0)'); // 每頁匿名瀏覽數（只有路徑，無個資）
+    this.sql.exec('CREATE TABLE IF NOT EXISTS ipq (k TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0, day TEXT NOT NULL)'); // 每 IP 每日 AI 次數（只存雜湊，約 2 天後清除）
     this.recent = new Map(); // 30 分鐘去重（記憶體；DO 休眠後重置，可接受）
   }
   read(day) {
@@ -102,6 +103,13 @@ export class Stats extends DurableObject {
     if (used >= cap) return { ok: false, used };
     this.sql.exec('INSERT INTO meta (k, n) VALUES (?, 1) ON CONFLICT(k) DO UPDATE SET n = n + 1', k);
     return { ok: true, used: used + 1 };
+  }
+  ipTake(hash, day, cap, kind) { // 原子：此 IP（雜湊）今日次數 +1，超過上限拒絕
+    const k = kind + ':' + day + ':' + hash, row = this.sql.exec('SELECT n FROM ipq WHERE k = ?', k).toArray()[0], n = row ? row.n : 0;
+    if (n >= cap) return { ok: false, n };
+    this.sql.exec('INSERT INTO ipq (k, n, day) VALUES (?, 1, ?) ON CONFLICT(k) DO UPDATE SET n = n + 1', k, day);
+    if (Math.random() < 0.02) this.sql.exec('DELETE FROM ipq WHERE day < ?', taipeiDay(Date.now() - 2 * 86400e3));
+    return { ok: true, n: n + 1 };
   }
   aiUsed(day, kind = 'ai') { const r = this.sql.exec('SELECT n FROM meta WHERE k = ?', kind + ':' + day).toArray()[0]; return r ? r.n : 0; }
   history(limit = 30) { return this.sql.exec('SELECT day, n FROM days ORDER BY day DESC LIMIT ?', limit).toArray(); }
@@ -151,6 +159,21 @@ async function feedback(request, env) {
   catch (e) { console.error('feedback email failed', e && e.code, e && e.message); return json({ ok: false, error: r.ok.lang === 'cn' ? '暂时无法发送，请稍后再试或来信联系' : '暫時無法寄出，請稍後再試或來信聯絡', code: (e && e.code) || 'send_failed' }, 502); }
 }
 
+// AI 端點只接受本站頁面發出的請求（Origin 或 Referer 必須是本站）
+const SITE_HOSTS = new Set(['jisuanle.com', 'www.jisuanle.com']);
+export function fromSite(request) {
+  const self = new URL(request.url).host, h = request.headers.get('origin') || request.headers.get('referer') || '';
+  if (!h || h === 'null') return false;
+  try { const host = new URL(h).host; return host === self || SITE_HOSTS.has(host); } catch (e) { return false; }
+}
+const IPMSG = { tw: '今天次數用完了，明天再來', cn: '今天次数用完了，明天再来', x: "You've used today's limit — please come back tomorrow." };
+async function ipCap(env, request, kind, cap, ui) {
+  if (!env.STATS) return null;
+  const hash = await sha((request.headers.get('cf-connecting-ip') || 'local') + '|' + kind);
+  const q = await env.STATS.get(env.STATS.idFromName('global')).ipTake(hash, taipeiDay(), cap, kind);
+  return q.ok ? null : json({ ok: false, error: IPMSG[ui === 'tw' || ui === 'cn' ? ui : 'x'], code: 'ip_quota' }, 429, { 'retry-after': '3600' });
+}
+
 const QUOTA_ERR = /quota|neuron|limit exceeded|daily|4006|capacity|exceeded/i;
 
 // ---------- AI 看圖配梗（Workers AI 視覺模型） ----------
@@ -186,14 +209,14 @@ async function memeQuota(env, kind = 'ai', cap = Number(env.AI_DAILY_CAP || 500)
 async function memeCaption(request, env, ctx) {
   const url = new URL(request.url);
   if (request.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405, { allow: 'POST' });
-  const origin = request.headers.get('origin');
-  if (origin && origin !== 'null' && new URL(origin).host !== url.host) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!fromSite(request)) return json({ ok: false, error: 'forbidden' }, 403);
   if (Number(request.headers.get('content-length') || 0) > 300000) return json({ ok: false, error: AIMSG.tw.bad, code: 'too_large' }, 413);
   let d; try { d = await request.json(); } catch (e) { return json({ ok: false, error: AIMSG.tw.bad, code: 'bad_request' }, 400); }
   const lang = d && (d.lang === 'cn' || LANGN[d.lang]) ? d.lang : 'tw', M = AIMSG[lang] || AIMSG.en, img = String((d && d.image) || '');
   if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(img) || img.length > 290000) return json({ ok: false, error: M.bad, code: 'bad_image' }, 400);
   const ip = request.headers.get('cf-connecting-ip') || 'local';
   if (env.AI_RL && typeof env.AI_RL.limit === 'function') { try { const { success } = await env.AI_RL.limit({ key: 'ai:' + ip }); if (!success) return json({ ok: false, error: M.rate, code: 'rate_limited' }, 429, { 'retry-after': '60' }); } catch (e) {} }
+  { const r = await ipCap(env, request, 'ai', Number(env.AI_IP_DAILY_CAP || 20), lang === 'cn' ? 'cn' : LANGN[lang] ? 'x' : 'tw'); if (r) return r; }
   const cap = Number(env.AI_DAILY_CAP || 500);
   const day = taipeiDay(); let used = 0;
   if (env.STATS) {
@@ -229,14 +252,14 @@ const TCAP = env => Number(env.TRANSLATE_DAILY_CAP || 300);
 async function translate(request, env) {
   const url = new URL(request.url);
   if (request.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405, { allow: 'POST' });
-  const origin = request.headers.get('origin');
-  if (origin && origin !== 'null' && new URL(origin).host !== url.host) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!fromSite(request)) return json({ ok: false, error: 'forbidden' }, 403);
   if (Number(request.headers.get('content-length') || 0) > 12000) return json({ ok: false, error: 'too_large' }, 413);
   let d; try { d = await request.json(); } catch (e) { return json({ ok: false, error: 'bad_request' }, 400); }
   const ui = String((d && d.ui) || 'tw'), text = String((d && d.text) || '').trim(), src = TLANG[d && d.source] ? d.source : 'auto', tgt = TLANG[d && d.target] && d.target !== 'auto' ? d.target : 'en';
   if (!text || [...text].length > 1000) return json({ ok: false, error: tm('bad', ui), code: 'bad_text' }, 400);
   const ip = request.headers.get('cf-connecting-ip') || 'local';
   if (env.AI_RL && typeof env.AI_RL.limit === 'function') { try { const { success } = await env.AI_RL.limit({ key: 'tr:' + ip }); if (!success) return json({ ok: false, error: tm('rate', ui), code: 'rate_limited' }, 429, { 'retry-after': '60' }); } catch (e) {} }
+  { const r = await ipCap(env, request, 'tr', Number(env.TR_IP_DAILY_CAP || 30), ui); if (r) return r; }
   const cap = TCAP(env); let used = 0;
   if (env.STATS) { const q = await env.STATS.get(env.STATS.idFromName('global')).aiTake(taipeiDay(), cap, 'tr'); used = q.used; if (!q.ok) return json({ ok: false, error: tm('quota', ui), code: 'quota', cap, remaining: 0 }, 429); }
   const rem = Math.max(0, cap - used);
