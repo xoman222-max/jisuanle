@@ -91,7 +91,7 @@ function jsqrMulti(jsQR, d, W, H) {
     if (video.readyState >= 2 && video.videoWidth) decode(video, video.videoWidth, video.videoHeight, false).then(handle).catch(function () {}).then(function () { timer = setTimeout(loop, 120); });
     else timer = setTimeout(loop, 200);
   }
-  function stop() { clearTimeout(timer); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; }
+  function stop() { clearTimeout(timer); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; if (ctl) ctl.hidden = true; }
   var ua = navigator.userAgent || '', inApp = /Line\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|; wv\)/i.test(ua);
   var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), isAnd = /Android/i.test(ua);
   var STEPS = {
@@ -111,6 +111,58 @@ function jsqrMulti(jsQR, d, W, H) {
     h.querySelector('.scanalt').onchange = function () { h.hidden = true; pick(this); };
     msg.textContent = '';
   }
+  var BAD = /wide|ultra|tele|depth|macro|超廣|廣角|長焦|望遠|微距|景深/i, rear = [], ctl = null;
+  function open(v) { v.width = { ideal: 1920 }; v.height = { ideal: 1080 }; return navigator.mediaDevices.getUserMedia({ video: v, audio: false }); }
+  function curId() { var t = stream && stream.getVideoTracks()[0], st = t && t.getSettings ? t.getSettings() : {}; return st.deviceId; }
+  function listRear() {
+    if (!navigator.mediaDevices.enumerateDevices) return Promise.resolve([]);
+    return navigator.mediaDevices.enumerateDevices().then(function (d) {
+      var v = d.filter(function (x) { return x.kind === 'videoinput'; }), r = v.filter(function (x) { return /back|rear|environment|後/i.test(x.label); });
+      rear = (r.length ? r : v).slice().sort(function (a, b) { return BAD.test(a.label) - BAD.test(b.label); });
+      var lb = $('scanlens'); if (lb) lb.hidden = rear.length < 2;
+      return rear;
+    }).catch(function () { return []; });
+  }
+  function useCam(id) {
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    return open({ deviceId: { exact: id } }).then(setup).catch(function () { msg.textContent = '這個鏡頭無法開啟，請再按一次「切換鏡頭」'; });
+  }
+  function controls() {
+    if (ctl) return ctl;
+    ctl = document.createElement('div'); ctl.id = 'scanctl';
+    ctl.innerHTML = '<p class="note" id="scanfocushint">點一下畫面可重新對焦</p><button type="button" class="secondary" id="scanlens" hidden>🔄 切換鏡頭</button><label id="scanzoomL" hidden>放大 <input type="range" id="scanzoom"></label><label id="scanfdL" hidden>對焦距離 <input type="range" id="scanfd"></label>';
+    $('scanwrap').parentNode.insertBefore(ctl, $('scanwrap').nextSibling);
+    $('scanlens').onclick = function () { if (rear.length < 2) return; var i = rear.map(function (c) { return c.deviceId; }).indexOf(curId()); var c = rear[(i + 1) % rear.length]; msg.textContent = '切換到：' + (c.label || '鏡頭 ' + ((i + 1) % rear.length + 1)); useCam(c.deviceId); };
+    return ctl;
+  }
+  function slider(id, lab, c, val, fn) {
+    var el = $(id); $(lab).hidden = false; el.min = c.min; el.max = c.max; el.step = c.step || (c.max - c.min) / 100; el.value = val; el.oninput = function () { fn(+el.value); };
+  }
+  function setup(s) {
+    stream = s; video.srcObject = s; video.hidden = false; $('scanwrap').hidden = false; lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
+    msg.textContent = '掃描中…請把發票左邊的 QR 對準框內，距離約 10–15 公分';
+    controls(); ctl.hidden = false; $('scanzoomL').hidden = $('scanfdL').hidden = true; torchBtn.hidden = true; torchBtn.on = false; torchBtn.textContent = '🔦 開啟手電筒';
+    var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, st = tr.getSettings ? tr.getSettings() : {}, fm = cap.focusMode || [];
+    var ap = function (o) { return tr.applyConstraints({ advanced: [o] }).catch(function () {}); };
+    // 有些手機會忽略初始條件裡的 focusMode，所以串流開始後再套一次
+    var cont = function () { if (fm.indexOf('continuous') >= 0) return ap({ focusMode: 'continuous' }); return Promise.resolve(); };
+    setTimeout(cont, 300);
+    if (cap.zoom && cap.zoom.max > cap.zoom.min) { var z0 = Math.min(cap.zoom.max, Math.max(cap.zoom.min, st.zoom || 1)); slider('scanzoom', 'scanzoomL', cap.zoom, z0, function (v) { ap({ zoom: v }); }); }
+    if (cap.focusDistance && fm.indexOf('continuous') < 0 && cap.focusDistance.max > cap.focusDistance.min) slider('scanfd', 'scanfdL', cap.focusDistance, st.focusDistance || cap.focusDistance.min, function (v) { ap({ focusMode: 'manual', focusDistance: v }); });
+    video.onclick = function (ev) {
+      var r = video.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+      msg.textContent = '重新對焦中…';
+      if (fm.indexOf('single-shot') >= 0) {
+        var o = { focusMode: 'single-shot' }; if (cap.pointsOfInterest || 'pointsOfInterest' in st) o.pointsOfInterest = [{ x: x, y: y }];
+        ap(o).then(function () { setTimeout(cont, 1500); });
+      } else if (fm.indexOf('continuous') >= 0) {
+        ap({ focusMode: fm.indexOf('manual') >= 0 ? 'manual' : 'continuous' }).then(function () { setTimeout(cont, 150); });
+      } else msg.textContent = '這個鏡頭不支援自動對焦，試試「切換鏡頭」或把手機拉遠並放大';
+      setTimeout(function () { if (msg.textContent === '重新對焦中…') msg.textContent = '掃描中…請把發票左邊的 QR 對準框內，距離約 10–15 公分'; }, 1600);
+    };
+    if (cap.torch) { torchBtn.hidden = false; torchBtn.onclick = function () { torchBtn.on = !torchBtn.on; ap({ torch: torchBtn.on }); torchBtn.textContent = torchBtn.on ? '🔦 關閉手電筒' : '🔦 開啟手電筒'; }; }
+    clearTimeout(timer); loop();
+  }
   function start() {
     $('scanhelp').hidden = true;
     if (inApp && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return help('你正在 App 內建瀏覽器中，無法開啟相機。');
@@ -118,13 +170,14 @@ function jsqrMulti(jsQR, d, W, H) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return help(inApp ? '你正在 App 內建瀏覽器中，無法開啟相機。' : '這個瀏覽器不支援開啟相機。');
     msg.textContent = '開啟相機中…若跳出詢問視窗，請按「允許」';
     // 直接在點擊當下呼叫 getUserMedia，不先 await，確保瀏覽器會跳出權限詢問
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } }, audio: false }).then(function (s) {
-      stream = s; video.srcObject = s; video.hidden = false; $('scanwrap').hidden = false; lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
-      msg.textContent = '掃描中…請把發票左邊的 QR 對準框內，距離約 10–15 公分';
-      var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {};
-      if (cap.focusMode && cap.focusMode.indexOf('continuous') >= 0) tr.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
-      if (cap.torch) { torchBtn.hidden = false; torchBtn.onclick = function () { torchBtn.on = !torchBtn.on; tr.applyConstraints({ advanced: [{ torch: torchBtn.on }] }).catch(function () {}); torchBtn.textContent = torchBtn.on ? '🔦 關閉手電筒' : '🔦 開啟手電筒'; }; }
-      loop();
+    open({ facingMode: { ideal: 'environment' } }).then(function (s) {
+      setup(s);
+      // Android 常預設超廣角鏡頭（近距離無法對焦）：取得權限後列出後鏡頭，改用主鏡頭
+      listRear().then(function (cams) {
+        var cur = curId(), bad = /wide|ultra|tele|depth|macro|超廣|廣角|長焦|望遠|微距|景深/i, good = cams.filter(function (c) { return !bad.test(c.label); });
+        var curCam = cams.filter(function (c) { return c.deviceId === cur; })[0];
+        if (isAnd && curCam && bad.test(curCam.label) && good.length) useCam(good[0].deviceId);
+      });
     }).catch(function (e) {
       var n = e && e.name;
       if (n === 'NotFoundError' || n === 'OverconstrainedError' || n === 'DevicesNotFoundError') help('沒有偵測到相機。');
