@@ -118,7 +118,7 @@ function jsqrMulti(jsQR, d, W, H) {
     if (video.readyState >= 2 && video.videoWidth) decode(video, video.videoWidth, video.videoHeight, false).then(handle).catch(function () {}).then(function () { timer = setTimeout(loop, det ? 150 : 250); });
     else timer = setTimeout(loop, 200);
   }
-  function stop() { clearTimeout(timer); sess++; starting = false; if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; resetVideo(); video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; if (ctl) ctl.hidden = true; }
+  function stop() { clearTimeout(timer); sess++; drawSess = -1; cx2.fillStyle = '#000'; cx2.fillRect(0, 0, cv.width, cv.height); starting = false; if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; resetVideo(); video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; if (ctl) ctl.hidden = true; }
   var ua = navigator.userAgent || '', inApp = /Line\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|; wv\)/i.test(ua);
   var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), isAnd = /Android/i.test(ua);
   var STEPS = {
@@ -155,6 +155,28 @@ function jsqrMulti(jsQR, d, W, H) {
   function saved() { try { var v = localStorage.getItem(KEY); if (!v) return null; return v.charAt(0) === '{' ? JSON.parse(v) : { id: v, label: '', g: '' }; } catch (e) { return null; } }
   // 畫面真的有影格後才拿掉遮罩，避免閃一下
   // 停止後把 video 完全清空並蓋回遮罩，下一次開啟跟第一次一模一樣
+  // 預覽改畫在 <canvas>：<video> 保持播放但幾乎看不見，避免 Chrome Android 把 video 升級成硬體覆蓋層時整頁閃黑
+  var cv = $('scancv'), cx2 = cv.getContext('2d', { alpha: false }), crop = [0, 0, 1, 1], drawSess = -1;
+  function drawLoop() {
+    var my = sess; if (drawSess === my) return; drawSess = my;
+    var next = function () { if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(frame); else requestAnimationFrame(frame); };
+    var frame = function () {
+      if (my !== sess || !stream) { if (drawSess === my) drawSess = -1; return; }
+      var vw = video.videoWidth, vh = video.videoHeight;
+      if (vw && vh) {
+        var dpr = root.devicePixelRatio || 1, cw = cv.clientWidth, ch = cv.clientHeight;
+        var W = Math.min(1280, Math.round(cw * dpr)), H = Math.round(W * ch / Math.max(1, cw));
+        if (W && H) {
+          if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+          var s = Math.max(W / vw, H / vh), sw = W / s, sh = H / s, sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+          crop = [sx / vw, sy / vh, sw / vw, sh / vh];
+          cx2.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+        }
+      }
+      next();
+    };
+    next();
+  }
   function resetVideo() { video.onplaying = null; try { video.pause(); } catch (e) {} video.srcObject = null; video.removeAttribute('src'); try { video.load(); } catch (e) {} $('scanwrap').classList.add('loading'); }
   function log() { try { console.log.apply(console, ['[scan]'].concat([].slice.call(arguments))); } catch (e) {} }
   // 冷啟動的相機前幾格會過亮／過暗（自動曝光、白平衡暖機），等畫面亮度穩定才淡出遮罩
@@ -200,7 +222,7 @@ function jsqrMulti(jsQR, d, W, H) {
     var el = $(id); $(lab).hidden = false; el.min = c.min; el.max = c.max; el.step = c.step || (c.max - c.min) / 100; el.value = val; el.oninput = function () { fn(+el.value); };
   }
   function setup(s) {
-    stream = s; var wrap = $('scanwrap'); if (video.srcObject !== s) { wrap.classList.add('loading'); video.srcObject = s; } video.hidden = false; wrap.hidden = false; save(); lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
+    stream = s; var wrap = $('scanwrap'); if (video.srcObject !== s) { wrap.classList.add('loading'); video.srcObject = s; } video.hidden = false; drawLoop(); wrap.hidden = false; save(); lastHit = hintAt = Date.now(); video.play(); $('scanstart').hidden = true; $('scanstop').hidden = false;
     msg.textContent = '掃描中…請把發票左邊的 QR 對準框內，距離約 10–15 公分';
     controls(); ctl.hidden = false; $('scanzoomL').hidden = $('scanfdL').hidden = true; torchBtn.hidden = true; torchBtn.on = false; torchBtn.textContent = '🔦 開啟手電筒';
     var tr = s.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, st = tr.getSettings ? tr.getSettings() : {}, fm = cap.focusMode || [];
@@ -211,8 +233,8 @@ function jsqrMulti(jsQR, d, W, H) {
     cont().then(function (did) { setTimeout(reveal, did ? 200 : 0); });
     if (cap.zoom && cap.zoom.max > cap.zoom.min) { var z0 = Math.min(cap.zoom.max, Math.max(cap.zoom.min, st.zoom || 1)); slider('scanzoom', 'scanzoomL', cap.zoom, z0, function (v) { ap({ zoom: v }); }); }
     if (cap.focusDistance && fm.indexOf('continuous') < 0 && cap.focusDistance.max > cap.focusDistance.min) slider('scanfd', 'scanfdL', cap.focusDistance, st.focusDistance || cap.focusDistance.min, function (v) { ap({ focusMode: 'manual', focusDistance: v }); });
-    video.onclick = function (ev) {
-      var r = video.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+    video.onclick = null; cv.onclick = function (ev) {
+      var r = cv.getBoundingClientRect(), x = crop[0] + crop[2] * (ev.clientX - r.left) / r.width, y = crop[1] + crop[3] * (ev.clientY - r.top) / r.height;
       msg.textContent = '重新對焦中…';
       if (fm.indexOf('single-shot') >= 0) {
         var o = { focusMode: 'single-shot' }; if (cap.pointsOfInterest || 'pointsOfInterest' in st) o.pointsOfInterest = [{ x: x, y: y }];
