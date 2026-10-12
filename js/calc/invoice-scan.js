@@ -31,8 +31,9 @@ function jsqrMulti(jsQR, d, W, H) {
   return out;
 }
   if (typeof module !== 'undefined' && module.exports) { module.exports = { parseScan: parseScan, plans: plans, jsqrMulti: jsqrMulti }; return; }
-  root.INVSCAN = { parseScan: parseScan };
-  var box = document.getElementById('scanbox'); if (!box || !root.TWLIFE) return;
+  root.INVSCAN = { parseScan: parseScan, plans: plans, jsqrMulti: jsqrMulti };
+  if (typeof document === 'undefined') return; // 在 Worker 內只提供解析函式
+  var me = document.currentScript, box = document.getElementById('scanbox'); if (!box || !root.TWLIFE) return;
   var T = root.TWLIFE, $ = function (id) { return document.getElementById(id); };
   var sess = 0, starting = false, lastHit = 0, hintAt = 0, video = $('scanvid'), list = $('scanlist'), msg = $('scanmsg'), torchBtn = $('scantorch'), stream = null, timer = null, seen = {}, total = 0, count = 0, det = null, jsqrP = null, flip = 0;
   var cvs = document.createElement('canvas'), ctx = cvs.getContext('2d', { willReadFrequently: true });
@@ -54,11 +55,34 @@ function jsqrMulti(jsQR, d, W, H) {
   }
   function isLeft(t) { var p = parseScan(t); return p && !p.ignore; }
   function viaJsQR(src, list) { return loadJsQR().then(function () { var out = []; list.forEach(function (p) { if (out.some(isLeft)) return; var g = grab(src, p); out = out.concat(jsqrMulti(root.jsQR, g[0], g[1], g[2])); }); return out; }); }
+  // 解碼交給 Web Worker（createImageBitmap 傳過去，Worker 用 OffscreenCanvas 裁切＋BarcodeDetector／jsQR）；一次只送一格
+  var wk = null, wkId = 0, wkCb = {}, wkOK = typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined' && typeof createImageBitmap !== 'undefined';
+  function worker() {
+    if (wk || !wkOK) return wk;
+    try {
+      var u = me && me.src ? me.src.replace(/invoice-scan\.js/, 'invoice-scan-worker.js') : (document.body.getAttribute('data-root') || '../') + 'js/calc/invoice-scan-worker.js';
+      wk = new Worker(u);
+      wk.onmessage = function (e) { var cb = wkCb[e.data.id]; delete wkCb[e.data.id]; if (cb) cb[0](e.data.texts); };
+      wk.onerror = function () { wkOK = false; Object.keys(wkCb).forEach(function (k) { wkCb[k][1](); }); wkCb = {}; wk = null; };
+    } catch (e) { wkOK = false; wk = null; }
+    return wk;
+  }
+  function viaWorker(src, jl, skipJs) {
+    var w = worker(); if (!w) return Promise.reject();
+    return createImageBitmap(src).then(function (bmp) {
+      return new Promise(function (ok, no) { var id = ++wkId; wkCb[id] = [ok, no]; w.postMessage({ id: id, bmp: bmp, plans: jl, native: true, skipJs: skipJs }, [bmp]); });
+    });
+  }
   // 原生 BarcodeDetector（全解析度）＋ jsQR（中央裁切／左半／全畫面輪流；照片另試多倍率與分塊）
   function decode(src, w, h, full) {
     var P = plans(w, h, full), k = flip++, jl = full ? P : [P[k % P.length]];
-    // 即時掃描時減輕主執行緒負擔：有原生偵測就每 4 格才跑一次 jsQR，且縮到 900px 以內（避免畫面卡住、Chrome 重繪變黑）
+    // 即時掃描：jsQR 每 4 格跑一次，且縮到 900px 以內
     if (!full) jl = jl.map(function (p) { return [p[0], p[1], p[2], p[3], Math.min(p[4], 900)]; });
+    if (wkOK) return viaWorker(src, jl, !full && k % 4 !== 0).catch(function () { wkOK = false; return mainDecode(src, jl, full, k); });
+    return mainDecode(src, jl, full, k);
+  }
+  // 舊瀏覽器（沒有 Worker/OffscreenCanvas）才在主執行緒解碼
+  function mainDecode(src, jl, full, k) {
     return detector().then(function (d) {
       if (!d) return [];
       return d.detect(src).then(function (r) { return r.map(function (x) { return x.rawValue; }); }).catch(function () { return []; });
