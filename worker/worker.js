@@ -323,9 +323,34 @@ async function invoice(request, env, ctx) {
   } catch (e) { return json({ ok: false, error: 'invoice_unavailable' }, 502); }
 }
 
+// ---------- 首頁依瀏覽器語言自動導向（只限根目錄 /，第一次造訪、無 jsl_lang cookie、非機器人） ----------
+const LANG_EDS = ['en', 'ja', 'ko', 'vi', 'th', 'id', 'es'];
+const LANG_BOT = /bot|crawl|spider|slurp|facebookexternalhit|preview|headless|lighthouse|pagespeed|monitor|curl|wget|python|httpclient|java\/|go-http|axios|node-fetch|scrapy|embedly|whatsapp|telegram|discord|line\//i;
+export function pickEdition(al) {
+  const items = String(al || '').split(',').map((p, i) => { const [tag, ...ps] = p.trim().split(';'); const q = ps.map(x => x.trim()).find(x => x.startsWith('q=')); return { tag: tag.trim().toLowerCase(), q: q ? Number(q.slice(2)) : 1, i }; })
+    .filter(x => x.tag && x.tag !== '*' && x.q > 0 && !isNaN(x.q)).sort((a, b) => b.q - a.q || a.i - b.i);
+  for (const { tag } of items) {
+    const [base, ...rest] = tag.split('-');
+    if (base === 'zh') { if (rest.some(r => r === 'tw' || r === 'hk' || r === 'mo' || r === 'hant')) return 'tw'; return 'cn'; }
+    if (LANG_EDS.includes(base)) return base;
+  }
+  return items.length ? 'en' : null;
+}
+async function home(request, env) {
+  const ua = request.headers.get('user-agent') || '', al = request.headers.get('accept-language') || '', ck = request.headers.get('cookie') || '';
+  const pass = () => env.ASSETS.fetch(request);
+  if (request.method !== 'GET' || /(?:^|;\s*)jsl_lang=/.test(ck) || !ua || LANG_BOT.test(ua) || !al) return pass();
+  const ed = pickEdition(al); if (!ed) return pass();
+  const cookie = `jsl_lang=${ed}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`, vary = 'Accept-Language, Cookie';
+  if (ed === 'tw') { const r = await pass(), h = new Headers(r.headers); h.append('set-cookie', cookie); h.set('vary', vary); h.set('cache-control', 'private, no-store'); return new Response(r.body, { status: r.status, headers: h }); }
+  const u = new URL(request.url); u.pathname = '/' + ed + '/';
+  return new Response(null, { status: 302, headers: { location: u.pathname + u.search, 'set-cookie': cookie, vary, 'cache-control': 'private, no-store' } });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === '/') return home(request, env);
     if (url.pathname === '/api/feedback') return feedback(request, env);
     if (url.pathname === '/api/stats') return stats(request, env);
     if (url.pathname === '/api/meme-caption/quota') return memeQuota(env);

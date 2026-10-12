@@ -12,3 +12,8 @@
 (function () { var a = document.querySelector('a[data-back]'); if (!a) return;
   a.addEventListener('click', function (e) { try { if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin && location.origin !== 'null') { e.preventDefault(); history.back(); } } catch (x) {} });
 })();
+
+/* 語言選單：記住使用者選的語言（首頁自動導向會尊重這個 cookie） */
+(function () { var M = { 'zh-Hant-TW': 'tw', 'zh-Hans-CN': 'cn' };
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[hreflang]'); if (!a) return; var h = a.getAttribute('hreflang'), v = M[h] || h;
+    if (/^[a-z]{2}$/.test(v)) document.cookie = 'jsl_lang=' + v + '; path=/; max-age=31536000; samesite=lax; secure'; }, true); })();
