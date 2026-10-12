@@ -56,12 +56,15 @@ function jsqrMulti(jsQR, d, W, H) {
   function viaJsQR(src, list) { return loadJsQR().then(function () { var out = []; list.forEach(function (p) { if (out.some(isLeft)) return; var g = grab(src, p); out = out.concat(jsqrMulti(root.jsQR, g[0], g[1], g[2])); }); return out; }); }
   // 原生 BarcodeDetector（全解析度）＋ jsQR（中央裁切／左半／全畫面輪流；照片另試多倍率與分塊）
   function decode(src, w, h, full) {
-    var P = plans(w, h, full), jl = full ? P : [P[flip++ % P.length]];
+    var P = plans(w, h, full), k = flip++, jl = full ? P : [P[k % P.length]];
+    // 即時掃描時減輕主執行緒負擔：有原生偵測就每 4 格才跑一次 jsQR，且縮到 900px 以內（避免畫面卡住、Chrome 重繪變黑）
+    if (!full) jl = jl.map(function (p) { return [p[0], p[1], p[2], p[3], Math.min(p[4], 900)]; });
     return detector().then(function (d) {
       if (!d) return [];
       return d.detect(src).then(function (r) { return r.map(function (x) { return x.rawValue; }); }).catch(function () { return []; });
     }).then(function (nat) {
       if (nat.some(isLeft)) return nat;
+      if (!full && det && k % 4) return nat;
       return viaJsQR(src, jl).then(function (j) { return nat.concat(j); }, function () { return nat; });
     });
   }
@@ -88,7 +91,7 @@ function jsqrMulti(jsQR, d, W, H) {
   function loop() {
     if (!stream) return;
     if (Date.now() - lastHit > 8000 && Date.now() - hintAt > 8000) { hintAt = Date.now(); msg.textContent = '還沒讀到：試著把手機拉遠或靠近一點（約 10–15 公分）、避免反光' + (torchBtn.hidden ? '' : '、開手電筒') + '；或改按「📸 拍照掃描」'; }
-    if (video.readyState >= 2 && video.videoWidth) decode(video, video.videoWidth, video.videoHeight, false).then(handle).catch(function () {}).then(function () { timer = setTimeout(loop, 120); });
+    if (video.readyState >= 2 && video.videoWidth) decode(video, video.videoWidth, video.videoHeight, false).then(handle).catch(function () {}).then(function () { timer = setTimeout(loop, det ? 150 : 250); });
     else timer = setTimeout(loop, 200);
   }
   function stop() { clearTimeout(timer); sess++; starting = false; if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; resetVideo(); video.hidden = true; $('scanwrap').hidden = true; $('scanstart').hidden = false; $('scanstop').hidden = true; torchBtn.hidden = true; if (ctl) ctl.hidden = true; }
