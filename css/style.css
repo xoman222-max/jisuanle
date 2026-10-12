@@ -176,3 +176,4 @@ body main .hero nav.switch a,body main .hero nav.switch a:visited{padding:.45rem
 #scanmsg{margin:.6rem 0 .2rem;font-weight:600}
 .scanrow{display:flex;justify-content:space-between;gap:.6rem;padding:.5rem .2rem;border-bottom:1px solid var(--pico-muted-border-color)}.scanrow small{display:block;color:var(--pico-muted-color)}.scanrow.win{background:rgba(250,204,21,.18)}
 #scanhelp{border:2px solid #f59e0b;margin:.8rem 0}#scanhelp details{margin:.3rem 0}#scanhint{margin:.4rem 0}
+#scanwrap{position:relative;max-width:640px;margin:.6rem auto}#scanwrap video{width:100%;display:block;border-radius:8px}.scanframe{position:absolute;left:30%;top:10%;width:40%;height:80%;border:3px solid #22c55e;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}.scantip{position:absolute;left:0;right:0;bottom:.3rem;margin:0;text-align:center;color:#fff;font-size:.9rem;text-shadow:0 1px 3px #000}
