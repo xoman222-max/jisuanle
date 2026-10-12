@@ -168,3 +168,10 @@ body main .hero nav.switch{margin-top:.6rem;gap:.5rem}
 body main .hero nav.switch a,body main .hero nav.switch a:visited{padding:.45rem .5rem;font-size:.92rem}
 @media (max-width:600px){.hero p{display:none}.dz small{display:none}.hero h1{font-size:1.2rem}}
 .hero{overflow:visible}
+
+/* 發票掃描 */
+.scanbtns{display:flex;flex-wrap:wrap;gap:.5rem}.scanbtns button,.scanbtns .scanpick{width:auto;margin:0}
+.scanpick{display:inline-flex;align-items:center;padding:.6rem 1rem;border-radius:var(--pico-border-radius);background:var(--pico-secondary-background,#64748b);color:#fff;cursor:pointer}
+#scanvid{width:100%;max-height:60vh;object-fit:cover;border-radius:.8rem;margin-top:.8rem;background:#000}
+#scanmsg{margin:.6rem 0 .2rem;font-weight:600}
+.scanrow{display:flex;justify-content:space-between;gap:.6rem;padding:.5rem .2rem;border-bottom:1px solid var(--pico-muted-border-color)}.scanrow small{display:block;color:var(--pico-muted-color)}.scanrow.win{background:rgba(250,204,21,.18)}

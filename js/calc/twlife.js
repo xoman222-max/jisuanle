@@ -76,6 +76,7 @@
       html = big(won ? '恭喜！中獎 ' + won + ' 張' : '共 ' + nums.length + ' 張，這期沒有中獎', won ? '合計 ' + fmt(sum) + ' 元' : '再接再厲') + '<div class="kv">' + rows.join('') + '</div><h3 style="font-size:1rem;margin-top:1rem">' + esc(p.title) + ' 中獎號碼（<a href="' + esc(p.link) + '" target="_blank" rel="noopener">官方公告</a>）</h3>' + w;
       out.innerHTML = html;
     }
+    root.TWLIFE.getPeriods = function () { return data.periods; };
     sel.addEventListener('change', run); $('nums').addEventListener('input', run);
     fill(data, false);
     if (location.protocol.indexOf('http') === 0) fetch('/api/invoice').then(function (r) { return r.json(); }).then(function (j) { if (j && j.ok && j.periods && j.periods.length) fill(j, true); }).catch(function () {});
