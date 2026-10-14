@@ -71,7 +71,7 @@
     mosaic: async function () { var im = (await images())[0], c = flat(im), g = ctx(c), W = c.width, H = c.height, rect = { x: W * v('x') / 100, y: H * v('y') / 100, w: W * v('w') / 100, h: H * v('h') / 100 };
       if (v('mode') === 'blur') { var t = canvas(W, H), tg = ctx(t); tg.filter = 'blur(' + Math.max(2, v('block') / 2) + 'px)'; tg.drawImage(c, 0, 0); if (tg.filter && tg.filter.indexOf('blur') === 0) { g.save(); g.beginPath(); g.rect(rect.x, rect.y, rect.w, rect.h); g.clip(); g.drawImage(t, 0, 0); g.restore(); } else { var d0 = g.getImageData(0, 0, W, H); d0.data.set(K.pixelate(d0.data, W, H, rect, v('block'))); g.putImageData(d0, 0, 0); } }
       else { var d = g.getImageData(0, 0, W, H); d.data.set(K.pixelate(d.data, W, H, rect, v('block') * Math.max(1, W / 800))); g.putImageData(d, 0, 0); }
-      return show([await canvasItem(c, files()[0].name + '_mosaic', 'image/jpeg', 0.92)]); },
+      await show([await canvasItem(c, files()[0].name + '_mosaic', 'image/jpeg', 0.92)]); mosaicUI(); },
     meme: async function () { var im = (await images())[0], c = flat(im); if (window.MemeX) { await window.MemeX.paint(c); return show([await canvasItem(c, files()[0].name + '_meme', 'image/jpeg', 0.92)]); } var g = ctx(c), fs = c.width * v('size') / 100; g.font = '900 ' + fs + 'px "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif'; g.textAlign = 'center'; g.lineJoin = 'round'; g.lineWidth = fs / 8; g.strokeStyle = v('stroke'); g.fillStyle = v('color');
       [[v('top'), fs * 1.1], [v('bottom'), c.height - fs * 0.35]].forEach(function (p) { if (!p[0]) return; g.textBaseline = 'alphabetic'; g.strokeText(p[0], c.width / 2, p[1], c.width * 0.95); g.fillText(p[0], c.width / 2, p[1], c.width * 0.95); });
       return show([await canvasItem(c, files()[0].name + '_meme', 'image/jpeg', 0.92)]); },
@@ -112,7 +112,30 @@
   function toggle() { [].forEach.call(document.querySelectorAll('[data-show]'), function (el) { var p = el.getAttribute('data-show').split('='), ok = p[1].split('|').indexOf(String(v(p[0]))) >= 0; el.style.display = ok ? '' : 'none'; }); }
   box.addEventListener('change', toggle); toggle();
   $('go').addEventListener('click', async function () { window.__out = null; window.__err = null; msg('…'); try { await R[TOOL](); } catch (e) { msg(T.err + (e.message || e)); window.__err = String(e.message || e); } });
+  // 自動預覽：便宜的本機處理在選圖與調整選項時自動執行（防抖）；重型（AI／GIF／PDF）只顯示原圖，仍需按按鈕
+  var AUTO = { compress: 1, convert: 1, resize: 1, crop: 1, rotate: 1, watermark: 1, grid: 1, stitch: 1, filters: 1, mosaic: 1, color: 1, favicon: 1, exif: 1, qr: 1, base64: 1 };
+  var ORIG = { removebg: 1, gif: 1, img2pdf: 1 };
+  function previewOriginals() { var fs = files().filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif)$/i.test(f.name); }); if (!fs.length) return; var out = $('out'); out.innerHTML = ''; $('outCard').hidden = false;
+    fs.slice(0, 30).forEach(function (f) { var d = document.createElement('div'), im = new Image(); d.className = 'outitem'; im.alt = ''; im.src = URL.createObjectURL(f); im.onerror = function () { d.innerHTML = '<p class="note">' + (/heic|heif/i.test(f.type + f.name) ? T.heic : f.name) + '</p>'; }; d.appendChild(im); var n = document.createElement('div'); n.className = 'note'; n.textContent = f.name + '｜' + kb(f.size); d.appendChild(n); out.appendChild(d); });
+    window.__preview = fs.length; }
+  var busy = false, again = false, tmr = 0;
+  async function autoRun() { if (busy) { again = true; return; } busy = true; try { do { again = false; if (TOOL === 'qr' && v('qmode') !== 'read') break; if (TOOL === 'base64' && v('bmode') === 'decode') break; if (!files().length) break; window.__err = null; await R[TOOL](); } while (again); } catch (e) { msg(T.err + (e.message || e)); window.__err = String(e.message || e); } busy = false; }
+  function schedule(e) { if (e && e.target && e.target.id === 'files' && ORIG[TOOL]) { previewOriginals(); return; } if (!AUTO[TOOL]) return; if (e && e.target && /^(b64in|text)$/.test(e.target.id) && TOOL !== 'qr') return; clearTimeout(tmr); tmr = setTimeout(autoRun, e && e.target && e.target.id === 'files' ? 0 : 250); }
+  box.addEventListener('change', schedule); box.addEventListener('input', schedule);
+  // 馬賽克：在預覽圖上畫出選取框（只是覆蓋層，不會進入下載檔），可用滑鼠／手指拖曳框選並同步滑桿
+  function mosaicUI() { var im = $('out').querySelector('.outitem img'); if (!im) return; var a = im.parentNode, wrap = document.createElement('div');
+    wrap.className = 'mz-wrap'; wrap.style.cssText = 'position:relative;width:fit-content;max-width:100%;margin:0 auto;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none';
+    a.parentNode.insertBefore(wrap, a); wrap.appendChild(im); a.remove(); im.style.marginBottom = '0'; im.draggable = false;
+    var box2 = document.createElement('div'); box2.className = 'mz-rect'; box2.style.cssText = 'position:absolute;pointer-events:none;border:2px dashed #ef4444;outline:2px dashed #fff;outline-offset:-4px;box-shadow:0 0 0 9999px rgba(0,0,0,.25);border-radius:2px'; wrap.style.overflow = 'hidden'; wrap.appendChild(box2);
+    function put(x, y, w, h) { box2.style.left = x + '%'; box2.style.top = y + '%'; box2.style.width = w + '%'; box2.style.height = h + '%'; }
+    put(v('x'), v('y'), Math.min(v('w'), 100 - v('x')), Math.min(v('h'), 100 - v('y')));
+    var hint = document.createElement('p'); hint.className = 'note'; var HL = { en: 'Tip: drag on the image to select the area to blur.', es: 'Consejo: arrastra sobre la imagen para elegir la zona a ocultar.', id: 'Tips: seret di gambar untuk memilih area yang disamarkan.', ja: 'ヒント：画像上をドラッグして範囲を選択できます。', ko: '팁: 이미지 위를 드래그해 가릴 영역을 선택하세요.', th: 'เคล็ดลับ: ลากบนรูปเพื่อเลือกพื้นที่ที่ต้องการเบลอ', vi: 'Mẹo: kéo trên ảnh để chọn vùng cần làm mờ.' }; hint.textContent = HL[document.documentElement.lang.slice(0, 2)] || (CN ? '提示：可直接在图片上拖曳框选要打码的区域。' : '提示：可直接在圖片上拖曳框選要打碼的區域。'); wrap.parentNode.insertBefore(hint, wrap);
+    var st = null, cur = null; function pt(e) { var r = im.getBoundingClientRect(); return { x: Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)), y: Math.max(0, Math.min(100, (e.clientY - r.top) / r.height * 100)) }; }
+    wrap.addEventListener('pointerdown', function (e) { e.preventDefault(); st = pt(e); cur = null; try { wrap.setPointerCapture(e.pointerId); } catch (_) {} });
+    wrap.addEventListener('pointermove', function (e) { if (!st) return; var p = pt(e); cur = { x: Math.min(st.x, p.x), y: Math.min(st.y, p.y), w: Math.abs(p.x - st.x), h: Math.abs(p.y - st.y) }; put(cur.x, cur.y, cur.w, cur.h); });
+    function end() { if (!st) return; st = null; if (!cur || cur.w < 1 || cur.h < 1) return; [['x', cur.x], ['y', cur.y], ['w', Math.max(1, cur.w)], ['h', Math.max(1, cur.h)]].forEach(function (q) { var el = $(q[0]); el.value = Math.round(q[1]); var o = $(q[0] + '_v'); if (o) o.value = el.value; }); $('h').dispatchEvent(new Event('input', { bubbles: true })); }
+    wrap.addEventListener('pointerup', end); wrap.addEventListener('pointercancel', end); }
+  // 拖動滑桿時即時移動選取框（重新處理有防抖）
+  if (TOOL === 'mosaic') box.addEventListener('input', function () { var r = $('out').querySelector('.mz-rect'); if (r) { r.style.left = v('x') + '%'; r.style.top = v('y') + '%'; r.style.width = Math.min(v('w'), 100 - v('x')) + '%'; r.style.height = Math.min(v('h'), 100 - v('y')) + '%'; } });
   if (location.protocol === 'file:' && TOOL === 'removebg') msg(T.file);
-  // 馬賽克：選圖後與調整滑桿時自動預覽，不必先按「開始處理」才看到圖片
-  if (TOOL === 'mosaic') { var pv = 0, run = function () { clearTimeout(pv); pv = setTimeout(function () { if (!files().length) return; R.mosaic().catch(function (e) { msg(T.err + (e.message || e)); }); }, 150); }; box.addEventListener('change', run); box.addEventListener('input', run); }
 })();

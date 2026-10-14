@@ -9,7 +9,7 @@
   var src = null, session = null, backend = '';
   function msg(s) { $('status').textContent = s; }
   function prog(p) { $('prog').value = p; }
-  $('file').addEventListener('change', function () { var f = this.files[0]; if (!f) return; var img = new Image(); img.onload = function () { src = img; msg(img.naturalWidth + ' × ' + img.naturalHeight); }; img.src = URL.createObjectURL(f); });
+  $('file').addEventListener('change', function () { var f = this.files[0]; if (!f) return; var img = new Image(); img.onload = function () { src = img; msg(img.naturalWidth + ' × ' + img.naturalHeight); var pv = $('srcPreview'); if (!pv) { pv = document.createElement('img'); pv.id = 'srcPreview'; pv.alt = ''; pv.style.cssText = 'display:block;max-width:100%;max-height:50vh;margin:.5rem auto;border-radius:.5rem'; $('status').parentNode.insertBefore(pv, $('status').nextSibling); } pv.src = img.src; }; img.src = URL.createObjectURL(f); });
   function canvasOf(img, w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; var g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, w, h); return c; }
   function basic(img, scale, sharp) {
     var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, d = I.outDims(w, h, scale, MAX_OUT); if (!d) throw new Error(t.fail);
