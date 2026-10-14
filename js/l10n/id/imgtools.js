@@ -71,7 +71,7 @@
     mosaic: async function () { var im = (await images())[0], c = flat(im), g = ctx(c), W = c.width, H = c.height, RG = mzRegions().map(function (q) { return { x: W * q.x / 100, y: H * q.y / 100, w: W * Math.min(q.w, 100 - q.x) / 100, h: H * Math.min(q.h, 100 - q.y) / 100 }; });
       if (RG.length) { if (v('mode') === 'blur') { var t = canvas(W, H), tg = ctx(t); tg.filter = 'blur(' + Math.max(2, v('block') / 2) + 'px)'; tg.drawImage(c, 0, 0); if (tg.filter && tg.filter.indexOf('blur') === 0) { g.save(); g.beginPath(); RG.forEach(function (r) { g.rect(r.x, r.y, r.w, r.h); }); g.clip(); g.drawImage(t, 0, 0); g.restore(); } else { var d0 = g.getImageData(0, 0, W, H); RG.forEach(function (r) { d0.data.set(K.pixelate(d0.data, W, H, r, v('block'))); }); g.putImageData(d0, 0, 0); } }
       else { var d = g.getImageData(0, 0, W, H); RG.forEach(function (r) { d.data.set(K.pixelate(d.data, W, H, r, v('block') * Math.max(1, W / 800))); }); g.putImageData(d, 0, 0); } }
-      window.__mzCount = RG.length; await show([await canvasItem(c, files()[0].name + '_mosaic', 'image/jpeg', 0.92)]); mosaicUI(); },
+      window.__mzCount = RG.length; var oo = $('out'); oo.style.minHeight = oo.offsetHeight + 'px'; await show([await canvasItem(c, files()[0].name + '_mosaic', 'image/jpeg', 0.92)]); mosaicUI(); },
     meme: async function () { var im = (await images())[0], c = flat(im); if (window.MemeX) { await window.MemeX.paint(c); return show([await canvasItem(c, files()[0].name + '_meme', 'image/jpeg', 0.92)]); } var g = ctx(c), fs = c.width * v('size') / 100; g.font = '900 ' + fs + 'px "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif'; g.textAlign = 'center'; g.lineJoin = 'round'; g.lineWidth = fs / 8; g.strokeStyle = v('stroke'); g.fillStyle = v('color');
       [[v('top'), fs * 1.1], [v('bottom'), c.height - fs * 0.35]].forEach(function (p) { if (!p[0]) return; g.textBaseline = 'alphabetic'; g.strokeText(p[0], c.width / 2, p[1], c.width * 0.95); g.fillText(p[0], c.width / 2, p[1], c.width * 0.95); });
       return show([await canvasItem(c, files()[0].name + '_meme', 'image/jpeg', 0.92)]); },
@@ -119,7 +119,7 @@
     fs.slice(0, 30).forEach(function (f) { var d = document.createElement('div'), im = new Image(); d.className = 'outitem'; im.alt = ''; im.src = URL.createObjectURL(f); im.onerror = function () { d.innerHTML = '<p class="note">' + (/heic|heif/i.test(f.type + f.name) ? T.heic : f.name) + '</p>'; }; d.appendChild(im); var n = document.createElement('div'); n.className = 'note'; n.textContent = f.name + '｜' + kb(f.size); d.appendChild(n); out.appendChild(d); });
     window.__preview = fs.length; }
   var busy = false, again = false, tmr = 0;
-  async function autoRun() { if (busy) { again = true; return; } busy = true; try { do { again = false; if (TOOL === 'qr' && v('qmode') !== 'read') break; if (TOOL === 'base64' && v('bmode') === 'decode') break; if (!files().length) break; window.__err = null; await R[TOOL](); } while (again); } catch (e) { msg(T.err + (e.message || e)); window.__err = String(e.message || e); } busy = false; }
+  async function autoRun() { if (window.__mzDrag) { clearTimeout(tmr); tmr = setTimeout(autoRun, 120); return; } if (busy) { again = true; return; } busy = true; try { do { again = false; if (TOOL === 'qr' && v('qmode') !== 'read') break; if (TOOL === 'base64' && v('bmode') === 'decode') break; if (!files().length) break; window.__err = null; await R[TOOL](); } while (again); } catch (e) { msg(T.err + (e.message || e)); window.__err = String(e.message || e); } busy = false; }
   function schedule(e) { if (e && e.target && e.target.id === 'files' && ORIG[TOOL]) { previewOriginals(); return; } if (!AUTO[TOOL]) return; if (e && e.target && /^(b64in|text)$/.test(e.target.id) && TOOL !== 'qr') return; clearTimeout(tmr); tmr = setTimeout(autoRun, e && e.target && e.target.id === 'files' ? 0 : 250); }
   box.addEventListener('change', schedule); box.addEventListener('input', schedule);
   // 馬賽克多區域：每次在預覽圖上拖曳新增一個區域；點選區域可選取（滑桿編輯選取的區域）；× 刪除、清除全部。框線只是覆蓋層，不會進入下載檔
@@ -135,19 +135,22 @@
       if (sel) { var x = document.createElement('button'); x.type = 'button'; x.className = 'mz-del'; x.textContent = '×'; x.title = x.ariaLabel = mzT[2]; x.style.cssText = 'position:absolute;top:-2px;right:-2px;transform:translate(40%,-40%);pointer-events:auto;width:28px;height:28px;min-width:0;padding:0;margin:0;border-radius:50%;border:2px solid #fff;background:#ef4444;color:#fff;font:bold 18px/22px sans-serif;cursor:pointer;touch-action:manipulation';
         x.addEventListener('pointerdown', function (e) { e.stopPropagation(); }); x.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); MZ.splice(MZS, 1); MZS = Math.max(0, MZ.length - 1); if (MZ[MZS]) mzSliders(MZ[MZS]); mzRerun(); }); r.appendChild(x); }
       wrap.appendChild(r); }); }
+  function mzMakeBar() { var bar = $('mzBar'); if (bar) return; bar = document.createElement('p'); bar.id = 'mzBar'; bar.className = 'note mz-bar'; bar.style.minHeight = '3em'; bar.textContent = mzT[0] + ' '; var clr = document.createElement('button'); clr.type = 'button'; clr.className = 'secondary outline mz-clear'; clr.textContent = mzT[1]; clr.style.cssText = 'padding:.2rem .7rem;margin:0 0 0 .3rem;width:auto;display:inline-block;font-size:.85rem';
+    clr.addEventListener('click', function () { MZ = []; MZS = 0; mzRerun(); }); bar.appendChild(clr); $('out').parentNode.insertBefore(bar, $('out')); }
   function mosaicUI() { var im = $('out').querySelector('.outitem img'); if (!im) return; var a = im.parentNode, wrap = document.createElement('div');
     wrap.className = 'mz-wrap'; wrap.style.cssText = 'position:relative;width:fit-content;max-width:100%;margin:0 auto;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none';
     a.parentNode.insertBefore(wrap, a); wrap.appendChild(im); a.remove(); im.style.marginBottom = '0'; im.draggable = false;
-    var bar = document.createElement('p'); bar.className = 'note mz-bar'; bar.textContent = mzT[0] + ' '; var clr = document.createElement('button'); clr.type = 'button'; clr.className = 'secondary outline mz-clear'; clr.textContent = mzT[1]; clr.style.cssText = 'padding:.2rem .7rem;margin:0 0 0 .3rem;width:auto;display:inline-block;font-size:.85rem';
-    clr.addEventListener('click', function () { MZ = []; MZS = 0; mzRerun(); }); bar.appendChild(clr); wrap.parentNode.insertBefore(bar, wrap);
+    im.decode ? im.decode().then(function () { $('out').style.minHeight = ''; }, function () { $('out').style.minHeight = ''; }) : ($('out').style.minHeight = '');
+    mzMakeBar();
     var live = document.createElement('div'); live.style.cssText = 'position:absolute;pointer-events:none;border:2px dashed #ef4444;display:none'; wrap.appendChild(live); mzDraw();
     var st = null, cur = null; function pt(e) { var r = im.getBoundingClientRect(); return { x: Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)), y: Math.max(0, Math.min(100, (e.clientY - r.top) / r.height * 100)) }; }
-    wrap.addEventListener('pointerdown', function (e) { e.preventDefault(); st = pt(e); cur = null; try { wrap.setPointerCapture(e.pointerId); } catch (_) {} });
+    wrap.addEventListener('pointerdown', function (e) { e.preventDefault(); window.__mzDrag = true; st = pt(e); cur = null; try { wrap.setPointerCapture(e.pointerId); } catch (_) {} });
     wrap.addEventListener('pointermove', function (e) { if (!st) return; var p = pt(e); cur = { x: Math.min(st.x, p.x), y: Math.min(st.y, p.y), w: Math.abs(p.x - st.x), h: Math.abs(p.y - st.y) }; if (cur.w < 1 && cur.h < 1) return; live.style.display = 'block'; live.style.left = cur.x + '%'; live.style.top = cur.y + '%'; live.style.width = cur.w + '%'; live.style.height = cur.h + '%'; });
-    function end() { if (!st) return; var s0 = st; st = null; live.style.display = 'none';
+    function end() { window.__mzDrag = false; if (!st) return; var s0 = st; st = null; live.style.display = 'none';
       if (cur && cur.w >= 1 && cur.h >= 1) { var q = { x: Math.round(cur.x), y: Math.round(cur.y), w: Math.max(1, Math.round(cur.w)), h: Math.max(1, Math.round(cur.h)) }; MZ.push(q); MZS = MZ.length - 1; mzSliders(q); mzRerun(); return; }
       for (var i = MZ.length - 1; i >= 0; i--) { var q2 = MZ[i]; if (s0.x >= q2.x && s0.x <= q2.x + q2.w && s0.y >= q2.y && s0.y <= q2.y + q2.h) { MZS = i; mzSliders(q2); mzDraw(); return; } } }
-    wrap.addEventListener('pointerup', end); wrap.addEventListener('pointercancel', function () { st = null; live.style.display = 'none'; }); }
+    wrap.addEventListener('pointerup', end); wrap.addEventListener('pointercancel', function () { window.__mzDrag = false; st = null; live.style.display = 'none'; }); }
+  if (TOOL === 'mosaic') mzMakeBar();
   // 滑桿編輯選取的區域（框線即時移動，重新處理有防抖）；沒有區域時以滑桿新增一個
   if (TOOL === 'mosaic') box.addEventListener('input', function (e) { if (!/^[xywh]$/.test(e.target.id)) return; mzRegions(); var q = { x: v('x'), y: v('y'), w: v('w'), h: v('h') }; if (!MZ.length) { MZ.push(q); MZS = 0; } else MZ[MZS] = q; mzDraw(); }, true);
   if (location.protocol === 'file:' && TOOL === 'removebg') msg(T.file);
