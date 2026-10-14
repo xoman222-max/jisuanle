@@ -113,4 +113,6 @@
   box.addEventListener('change', toggle); toggle();
   $('go').addEventListener('click', async function () { window.__out = null; window.__err = null; msg('…'); try { await R[TOOL](); } catch (e) { msg(T.err + (e.message || e)); window.__err = String(e.message || e); } });
   if (location.protocol === 'file:' && TOOL === 'removebg') msg(T.file);
+  // 馬賽克：選圖後與調整滑桿時自動預覽，不必先按「開始處理」才看到圖片
+  if (TOOL === 'mosaic') { var pv = 0, run = function () { clearTimeout(pv); pv = setTimeout(function () { if (!files().length) return; R.mosaic().catch(function (e) { msg(T.err + (e.message || e)); }); }, 150); }; box.addEventListener('change', run); box.addEventListener('input', run); }
 })();
