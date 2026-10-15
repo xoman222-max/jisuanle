@@ -1,2 +1,30 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>小說｜算了</title><style>body{margin:0;background:#f7f3ea;color:#222;font:18px/1.9 -apple-system,"PingFang TC","Noto Sans TC",sans-serif}main{max-width:720px;margin:auto;padding:20px}h1{font-size:26px}h2{font-size:21px;margin-top:48px;border-bottom:1px solid #ddd;padding-bottom:6px}p{margin:0 0 .9em;text-indent:2em}p.top{text-indent:0;text-align:right;font-size:15px}a{color:#a0522d}ul{padding-left:20px}.meta{text-indent:0;color:#666;font-size:15px}@media(prefers-color-scheme:dark){body{background:#1b1b1b;color:#ddd}}</style></head>
-<body><main><h1>小說（暫存）</h1><p class="meta">僅供你自己看，不收錄搜尋。</p><ul><li><a href="./fridge/">我家冰箱通異界，只收過期食物</a></li><li><a href="./vote/">讀者投票決定我怎麼死</a></li></ul></main></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>小說｜算了</title>
+<link rel="stylesheet" href="./css/reader.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="topbar">
+    <a href="/">← 算了</a>
+    <span>僅供自己閱讀 · 不收錄搜尋</span>
+  </div>
+  <h1>小說</h1>
+  <p class="meta">無會員、無付費牆。進度與書架存在本機瀏覽器。</p>
+  <div class="search-row">
+    <input id="novel-search" type="search" placeholder="搜尋書名或簡介…" autocomplete="off" enterkeyhint="search">
+  </div>
+  <h2 class="section-title">我的書架</h2>
+  <p id="shelf-empty" class="shelf-empty">還沒有開啟或標記的書。點進一本書就會出現在這裡。</p>
+  <div id="bookshelf" class="shelf-list"></div>
+  <h2 class="section-title">全部作品</h2>
+  <div id="book-list" class="book-list"></div>
+</main>
+<script src="./js/reader.js"></script>
+<script>NovelReader.initHub();</script>
+</body>
+</html>
