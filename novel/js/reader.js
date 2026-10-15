@@ -149,6 +149,20 @@
           sync();
         });
       }
+      // ← / → 翻章（輸入框內不觸發）
+      document.addEventListener("keydown", (e)=>{
+        if(e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        const t = e.target;
+        if(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+        if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        const nav = document.querySelector(".nav-chapters");
+        if(!nav || !nav.children.length) return;
+        const go = e.key === "ArrowLeft" ? nav.firstElementChild : nav.lastElementChild;
+        if(go && go.tagName === "A" && go.href){
+          e.preventDefault();
+          location.href = go.href;
+        }
+      });
     },
     initCatalog(opts){
       const { bookId, title } = opts;
