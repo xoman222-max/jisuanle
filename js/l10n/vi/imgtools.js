@@ -115,6 +115,8 @@
   // 自動預覽：便宜的本機處理在選圖與調整選項時自動執行（防抖）；重型（AI／GIF／PDF）只顯示原圖，仍需按按鈕
   var AUTO = { compress: 1, convert: 1, resize: 1, crop: 1, rotate: 1, watermark: 1, grid: 1, stitch: 1, filters: 1, mosaic: 1, color: 1, favicon: 1, exif: 1, qr: 1, base64: 1 };
   var ORIG = { removebg: 1, gif: 1, img2pdf: 1 };
+  // 自動處理的工具不需要「開始處理」按鈕：隱藏（qr／base64 有需手動的模式，保留）
+  if (AUTO[TOOL] && TOOL !== 'qr' && TOOL !== 'base64') { var gb = $('go'); if (gb) (gb.parentNode && gb.parentNode.tagName === 'P' && gb.parentNode.children.length === 1 ? gb.parentNode : gb).hidden = true; }
   function previewOriginals() { var fs = files().filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif)$/i.test(f.name); }); if (!fs.length) return; var out = $('out'); out.innerHTML = ''; $('outCard').hidden = false;
     fs.slice(0, 30).forEach(function (f) { var d = document.createElement('div'), im = new Image(); d.className = 'outitem'; im.alt = ''; im.src = URL.createObjectURL(f); im.onerror = function () { d.innerHTML = '<p class="note">' + (/heic|heif/i.test(f.type + f.name) ? T.heic : f.name) + '</p>'; }; d.appendChild(im); var n = document.createElement('div'); n.className = 'note'; n.textContent = f.name + '｜' + kb(f.size); d.appendChild(n); out.appendChild(d); });
     window.__preview = fs.length; }
