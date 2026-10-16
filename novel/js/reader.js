@@ -389,7 +389,10 @@
     function render(arr,total){
       cnt.textContent=total?'（'+total+'）':'';
       var mine=toks();
-      list.innerHTML=arr.length?arr.map(function(c){ return '<li><div class="nc-meta"><b>'+c.name+'</b> · <time datetime="'+c.at+'">'+ago(c.at)+'</time>'+(mine[c.id]?' <button type="button" class="nc-del" data-id="'+c.id+'">刪除</button>':'')+'</div><div class="nc-body">'+link(c.text).replace(/\n/g,'<br>')+'</div></li>'; }).join(''):'<li class="nc-empty">還沒有留言，來搶頭香吧！</li>';
+      function one(c,rep){ return '<div class="nc-meta"><b>'+c.name+'</b>'+(c.au?' <span class="nc-au">作者</span>':'')+' · <time datetime="'+c.at+'">'+ago(c.at)+'</time><button type="button" class="nc-rep" data-id="'+c.id+'">回覆</button>'+(mine[c.id]?' <button type="button" class="nc-del" data-id="'+c.id+'">刪除</button>':'')+'</div><div class="nc-body">'+link(c.text).replace(/\n/g,'<br>')+'</div>'; }
+      var tops=arr.filter(function(c){return !c.pid;}), kids={};
+      arr.forEach(function(c){ if(c.pid){ (kids[c.pid]=kids[c.pid]||[]).push(c); } });
+      list.innerHTML=tops.length?tops.map(function(c){ var k=(kids[c.id]||[]).slice().sort(function(a,b){return a.at<b.at?-1:1;}); return '<li data-id="'+c.id+'">'+one(c)+(k.length?'<ol class="nc-replies">'+k.map(function(r){return '<li>'+one(r,1)+'</li>';}).join('')+'</ol>':'')+'</li>'; }).join(''):'<li class="nc-empty">還沒有留言，來搶頭香吧！</li>';
       cv(list); cv(cnt);
     }
     var cur=[],tot=0;
@@ -407,13 +410,31 @@
         }).catch(function(){ say('網路錯誤，請稍後再試'); }).then(function(){ btn.disabled=false; });
     });
     list.addEventListener('click',function(e){
+      var rb=e.target.closest&&e.target.closest('.nc-rep');
+      if(rb){ var top=rb.closest('.nc-list > li'); if(!top) return; var ex=top.querySelector('.nc-rform'); if(ex){ ex.remove(); return; }
+        var nmv=''; try{ nmv=localStorage.getItem('novel-nick')||''; }catch(_){}
+        var f=document.createElement('form'); f.className='nc-form nc-rform'; f.setAttribute('novalidate','');
+        f.innerHTML='<input class="nc-name" maxlength="20" placeholder="暱稱（可不填）"><textarea maxlength="500" rows="2" placeholder="回覆…（2–500 字）"></textarea><div class="nc-row"><span class="nc-msg" role="status"></span><button type="submit">送出回覆</button></div>';
+        f.querySelector('input').value=nmv; top.appendChild(f); cv(f); f.querySelector('textarea').focus();
+        var pid=rb.getAttribute('data-id');
+        f.addEventListener('submit',function(ev){ ev.preventDefault(); var rt=f.querySelector('textarea').value.trim(), rn=[...rt].length, rm=f.querySelector('.nc-msg'), sb=f.querySelector('button');
+          function rs(t,ok){ rm.textContent=t; rm.className='nc-msg'+(ok?' ok':' err'); cv(rm); }
+          if(rn<2) return rs(ERR.too_short); if(rn>500) return rs(ERR.too_long);
+          var rnm=f.querySelector('input').value; try{ localStorage.setItem('novel-nick',rnm.trim()); }catch(_){}
+          sb.disabled=true; rs('送出中…',true);
+          fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:rnm,text:rt,parent:pid})}).then(function(r){return r.json();}).then(function(d){
+            if(d.ok&&d.comment){ if(d.token) setTok(d.comment.id,d.token); cur.push(d.comment); tot++; render(cur,tot); say('回覆已送出',true); }
+            else { sb.disabled=false; rs(ERR[d.error]||'送出失敗，請稍後再試'); }
+          }).catch(function(){ sb.disabled=false; rs('網路錯誤，請稍後再試'); });
+        });
+        return; }
       var b=e.target.closest&&e.target.closest('.nc-del'); if(!b) return;
       var id=b.getAttribute('data-id'), t=toks()[id]; if(!t) return;
       var q='確定要刪除這則留言嗎？'; if(window.__novelT2S) q=window.__novelT2S(q);
       if(!confirm(q)) return;
       b.disabled=true;
       fetch(API+'&id='+encodeURIComponent(id)+'&token='+encodeURIComponent(t),{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
-        if(d.ok||d.error==='not_found'){ setTok(id); cur=cur.filter(function(c){return c.id!==id;}); if(d.ok) tot--; render(cur,tot); say('已刪除',true); }
+        if(d.ok||d.error==='not_found'){ setTok(id); var n0=cur.length; cur=cur.filter(function(c){return c.id!==id&&c.pid!==id;}); if(d.ok) tot-=(n0-cur.length); render(cur,tot); say('已刪除',true); }
         else { b.disabled=false; say('刪除失敗'); }
       }).catch(function(){ b.disabled=false; say('網路錯誤，請稍後再試'); });
     });

@@ -373,7 +373,9 @@ async function novelComments(request, env) {
   const key = 'c:' + ch;
   if (request.method === 'GET') {
     const list = (await kv.get(key, 'json')) || [];
-    return json({ ok: true, ch, comments: list.slice(0, 100).map(pub), total: list.length });
+    const tops = list.filter(c => !c.pid).slice(0, 100), ids = new Set(tops.map(c => c.id));
+    const reps = list.filter(c => c.pid && ids.has(c.pid));
+    return json({ ok: true, ch, comments: tops.concat(reps).map(pub), total: list.filter(c => !c.pid || list.some(p => p.id === c.pid)).length });
   }
   if (request.method === 'DELETE') {
     const u = new URL(request.url).searchParams, id = u.get('id') || '', tok = u.get('token') || '';
@@ -381,24 +383,38 @@ async function novelComments(request, env) {
     const list = (await kv.get(key, 'json')) || [], i = list.findIndex(c => c.id === id);
     if (i < 0) return json({ ok: false, error: 'not_found' }, 404);
     if (!list[i].th || list[i].th !== await sha256(tok)) return json({ ok: false, error: 'forbidden' }, 403);
-    list.splice(i, 1);
-    await kv.put(key, JSON.stringify(list));
-    return json({ ok: true, deleted: id });
+    const left = list.filter(c => c.id !== id && c.pid !== id); // 刪主留言時一併刪除其回覆
+    await kv.put(key, JSON.stringify(left));
+    return json({ ok: true, deleted: id, removed: list.length - left.length });
   }
   if (request.method !== 'POST') return json({ ok: false, error: 'method' }, 405);
-  if (!fromSite(request)) return json({ ok: false, error: 'forbidden' }, 403);
+  const ak = request.headers.get('x-admin-key') || '';
+  const admin = !!(env.COMMENT_ADMIN_KEY && ak && ak === env.COMMENT_ADMIN_KEY);
+  if (ak && !admin) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!admin && !fromSite(request)) return json({ ok: false, error: 'forbidden' }, 403);
   let d; try { d = await request.json(); } catch (e) { return json({ ok: false, error: 'bad_json' }, 400); }
   if (d && d.website) return json({ ok: true, ignored: true }); // 蜜罐
   const c = cleanComment(d && d.name, d && d.text);
   if (c.error) return json({ ok: false, error: c.error }, 400);
+  let pid = '';
+  if (d && d.parent) {
+    if (!/^[a-z0-9]{6,20}$/.test(String(d.parent))) return json({ ok: false, error: 'bad_request' }, 400);
+    const cur = (await kv.get(key, 'json')) || [], p = cur.find(x => x.id === d.parent);
+    if (!p) return json({ ok: false, error: 'not_found' }, 404);
+    pid = p.pid || p.id; // 回覆的回覆掛在同一則主留言下（只一層）
+  }
   let ip = request.headers.get('cf-connecting-ip') || 'x', now = Date.now();
+  if (!admin) {
   if (ip.includes(':')) ip = ip.split(':').slice(0, 4).join(':') + '::/64'; // IPv6 以 /64 計
   if (now - (lastPost.get(ip) || 0) < 30_000) return json({ ok: false, error: 'rate_limited' }, 429);
   if (env.COMMENT_RL) { try { const { success } = await env.COMMENT_RL.limit({ key: ip }); if (!success) return json({ ok: false, error: 'rate_limited' }, 429); } catch (e) {} }
   if (env.COMMENT_GATE) { try { if (!(await env.COMMENT_GATE.get(env.COMMENT_GATE.idFromName('ip:' + ip)).take(30_000))) return json({ ok: false, error: 'rate_limited' }, 429); } catch (e) {} }
   lastPost.set(ip, now); if (lastPost.size > 5000) lastPost.clear();
+  }
   const token = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
   const item = { id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: c.name, text: c.text, at: new Date(now).toISOString(), th: await sha256(token) };
+  if (pid) item.pid = pid;
+  if (admin) { item.au = true; if (!d.name) item.name = '作者'; }
   const list = (await kv.get(key, 'json')) || [];
   list.unshift(item);
   await kv.put(key, JSON.stringify(list.slice(0, MAX_KEEP)));

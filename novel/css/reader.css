@@ -131,6 +131,13 @@ html[data-theme="night"] .nc-del,html[data-theme="night"] .nc-msg.err{color:#ff7
 html[data-theme="night"] .nc-del:hover,html[data-theme="night"] .nc-del:active{background:#ff7b6b; color:#1b1b1b}
 html[data-theme="green"] .nc-del,html[data-theme="green"] .nc-msg.err{color:#a8281b; border-color:#a8281b}
 html[data-theme="green"] .nc-del:hover{background:#a8281b; color:#fff}
+.nc-rep{appearance:none; margin-left:auto; border:0; background:transparent; color:var(--accent); font-size:13px; cursor:pointer; padding:.2rem .4rem}
+.nc-rep+.nc-del{margin-left:.2rem}
+.nc-au{display:inline-block; background:var(--accent); color:#fff; font-size:11px; line-height:1.5; padding:0 .45rem; border-radius:999px; font-weight:700}
+html[data-theme="night"] .nc-au{color:#1b1b1b}
+.nc-replies{list-style:none; margin:.4rem 0 0 1.1rem; padding:0 0 0 .8rem; border-left:2px solid var(--line)}
+.nc-list .nc-replies li{padding:.45rem 0; border-bottom:0}
+.nc-rform{margin:.5rem 0 0 1.1rem}
 /* 背景色選擇 */
 .theme-picker{display:inline-flex; gap:4px; flex-wrap:wrap}
 .toolbar .theme-opt{display:inline-flex; align-items:center; gap:4px; padding:.25rem .5rem; font-size:12px}
