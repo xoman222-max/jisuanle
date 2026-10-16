@@ -1,3 +1,5 @@
+/* reader theme: apply before paint */
+(function(){try{var p=JSON.parse(localStorage.getItem("jisuanle.novel.prefs")||"{}")||{};var t=p.theme||(p.night?"night":"white");if(["white","sepia","green","night"].indexOf(t)<0)t="white";document.documentElement.setAttribute("data-theme",t);if(t==="night"&&document.body)document.body.classList.add("night","novel-night");}catch(e){}})();
 (function(){
   const KEYS = {
     progress: "jisuanle.novel.progress",
@@ -25,10 +27,14 @@
     applyPrefs(){
       const p = this.getPrefs();
       document.documentElement.style.setProperty("--fs", p.fontSize + "px");
-      document.body.classList.toggle("night", !!p.night);
-      document.body.classList.toggle("novel-night", !!p.night);
-      const nightBtn = document.querySelector("[data-night]");
-      if(nightBtn) nightBtn.textContent = p.night ? "日間" : "夜間";
+      const theme = this.getTheme(p);
+      document.documentElement.setAttribute("data-theme", theme);
+      document.body.classList.toggle("night", theme === "night");
+      document.body.classList.toggle("novel-night", theme === "night");
+      document.querySelectorAll("[data-theme-opt]").forEach(b=>{
+        const on = b.getAttribute("data-theme-opt") === theme;
+        b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
       const fsLabel = document.querySelector("[data-fs-label]");
       if(fsLabel) fsLabel.textContent = p.fontSize + "px";
     },
@@ -38,11 +44,35 @@
       this.setPrefs(p);
       this.applyPrefs();
     },
-    toggleNight(){
+    getTheme(p){
+      p = p || this.getPrefs();
+      const t = p.theme || (p.night ? "night" : "white");
+      return ["white","sepia","green","night"].indexOf(t) < 0 ? "white" : t;
+    },
+    setTheme(t){
       const p = this.getPrefs();
-      p.night = !p.night;
+      p.theme = t; p.night = (t === "night");
       this.setPrefs(p);
       this.applyPrefs();
+    },
+    toggleNight(){ this.setTheme(this.getTheme() === "night" ? "white" : "night"); },
+    buildThemePicker(){
+      if(document.querySelector(".theme-picker")) return;
+      const night = document.querySelector("[data-night]");
+      const bar = night ? night.parentNode : document.querySelector(".toolbar");
+      if(!bar) return;
+      const wrap = document.createElement("span");
+      wrap.className = "theme-picker"; wrap.setAttribute("role","group"); wrap.setAttribute("aria-label","背景顏色");
+      [["white","白"],["sepia","米黃"],["green","護眼綠"],["night","夜間"]].forEach(([k,l])=>{
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "theme-opt"; b.setAttribute("data-theme-opt", k);
+        b.setAttribute("title", l);
+        b.innerHTML = '<i class="dot dot-' + k + '"></i><span>' + l + '</span>';
+        b.addEventListener("click", ()=> this.setTheme(k));
+        wrap.appendChild(b);
+      });
+      if(night){ bar.insertBefore(wrap, night); night.classList.add("hidden"); }
+      else bar.appendChild(wrap);
     },
     getShelf(){ return readJSON(KEYS.shelf, {}); },
     setShelf(s){ writeJSON(KEYS.shelf, s); },
@@ -104,8 +134,8 @@
       document.querySelectorAll("[data-fs]").forEach(btn=>{
         btn.addEventListener("click", ()=> this.bumpFont(parseInt(btn.getAttribute("data-fs"),10)));
       });
-      const night = document.querySelector("[data-night]");
-      if(night) night.addEventListener("click", ()=> this.toggleNight());
+      this.buildThemePicker();
+      this.applyPrefs();
     },
     initChapterPage(opts){
       const { bookId, chapterId, title } = opts;
