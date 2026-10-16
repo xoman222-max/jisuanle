@@ -327,6 +327,9 @@
   function cv(el){ var f=window.__novelT2S; if(!f) return; var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null),n; while((n=w.nextNode())) if(n.nodeValue.trim()) n.nodeValue=f(n.nodeValue); var q=el.querySelectorAll('[placeholder]'); for(var i=0;i<q.length;i++) q[i].placeholder=f(q[i].placeholder); }
   function ago(iso){ var d=(Date.now()-new Date(iso))/1e3; if(d<60) return '剛剛'; if(d<3600) return Math.floor(d/60)+' 分鐘前'; if(d<86400) return Math.floor(d/3600)+' 小時前'; if(d<86400*30) return Math.floor(d/86400)+' 天前'; return iso.slice(0,10); }
   function link(t){ return t.replace(/\b((?:https?:\/\/|www\.)[^\s<&]+)/i,function(u){ var h=/^www\./i.test(u)?'https://'+u:u; return '<a href="'+h+'" rel="nofollow ugc noopener" target="_blank">'+u+'</a>'; }); }
+  var TK='novel-comment-tokens';
+  function toks(){ try{ return JSON.parse(localStorage.getItem(TK)||'{}')||{}; }catch(e){ return {}; } }
+  function setTok(id,t){ var o=toks(); if(t) o[id]=t; else delete o[id]; try{ localStorage.setItem(TK,JSON.stringify(o)); }catch(e){} }
   function go(){
     var nav=document.querySelector('.nav-chapters'), body=document.querySelector('.chapter-body'); var anchor=nav||body; if(!anchor) return;
     var sec=document.createElement('section'); sec.className='novel-comments'; sec.id='comments';
@@ -343,7 +346,8 @@
     ta.addEventListener('input',function(){ len.textContent=[...ta.value].length+'/500'; });
     function render(arr,total){
       cnt.textContent=total?'（'+total+'）':'';
-      list.innerHTML=arr.length?arr.map(function(c){ return '<li><div class="nc-meta"><b>'+c.name+'</b> · <time datetime="'+c.at+'">'+ago(c.at)+'</time></div><div class="nc-body">'+link(c.text).replace(/\n/g,'<br>')+'</div></li>'; }).join(''):'<li class="nc-empty">還沒有留言，來搶頭香吧！</li>';
+      var mine=toks();
+      list.innerHTML=arr.length?arr.map(function(c){ return '<li><div class="nc-meta"><b>'+c.name+'</b> · <time datetime="'+c.at+'">'+ago(c.at)+'</time>'+(mine[c.id]?' <button type="button" class="nc-del" data-id="'+c.id+'">刪除</button>':'')+'</div><div class="nc-body">'+link(c.text).replace(/\n/g,'<br>')+'</div></li>'; }).join(''):'<li class="nc-empty">還沒有留言，來搶頭香吧！</li>';
       cv(list); cv(cnt);
     }
     var cur=[],tot=0;
@@ -356,9 +360,20 @@
       btn.disabled=true; say('送出中…',true);
       fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:nm.value,text:t,website:form.website.value})})
         .then(function(r){return r.json();}).then(function(d){
-          if(d.ok&&d.comment){ ta.value=''; len.textContent='0/500'; cur.unshift(d.comment); tot++; render(cur,tot); say('已送出，謝謝！',true); }
+          if(d.ok&&d.comment){ if(d.token) setTok(d.comment.id,d.token); ta.value=''; len.textContent='0/500'; cur.unshift(d.comment); tot++; render(cur,tot); say('已送出，謝謝！',true); }
           else say(ERR[d.error]||'送出失敗，請稍後再試');
         }).catch(function(){ say('網路錯誤，請稍後再試'); }).then(function(){ btn.disabled=false; });
+    });
+    list.addEventListener('click',function(e){
+      var b=e.target.closest&&e.target.closest('.nc-del'); if(!b) return;
+      var id=b.getAttribute('data-id'), t=toks()[id]; if(!t) return;
+      var q='確定要刪除這則留言嗎？'; if(window.__novelT2S) q=window.__novelT2S(q);
+      if(!confirm(q)) return;
+      b.disabled=true;
+      fetch(API+'&id='+encodeURIComponent(id)+'&token='+encodeURIComponent(t),{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+        if(d.ok||d.error==='not_found'){ setTok(id); cur=cur.filter(function(c){return c.id!==id;}); if(d.ok) tot--; render(cur,tot); say('已刪除',true); }
+        else { b.disabled=false; say('刪除失敗'); }
+      }).catch(function(){ b.disabled=false; say('網路錯誤，請稍後再試'); });
     });
     // 簡體模式：OpenCC 載入後再轉一次
     if(!window.__novelT2S){ var k=0,iv=setInterval(function(){ if(window.__novelT2S){ clearInterval(iv); cv(sec); } else if(++k>40) clearInterval(iv); },250); }

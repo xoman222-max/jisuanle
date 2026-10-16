@@ -113,3 +113,5 @@ body.night .nc-row button{color:#1b1b1b}
 .nc-meta b{color:var(--ink)}
 .nc-body{white-space:normal; word-break:break-word; margin-top:.15rem}
 .nc-empty{color:var(--muted); font-size:14px}
+.nc-del{appearance:none; border:0; background:none; color:var(--muted); font-size:12px; cursor:pointer; padding:0 .3rem; text-decoration:underline}
+.nc-del:hover{color:#c0392b}

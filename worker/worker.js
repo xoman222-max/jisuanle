@@ -351,6 +351,8 @@ async function home(request, env) {
 const CH_RE = /^[a-z0-9-]{1,40}\/c\d{1,4}$/;
 const MAX_KEEP = 300;
 const lastPost = new Map();
+const pub = ({ th, ...c }) => c; // 刪除權杖只存雜湊，不對外
+async function sha256(s) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); }
 const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export function cleanComment(name, text) {
   name = String(name || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 20) || '讀者';
@@ -371,7 +373,17 @@ async function novelComments(request, env) {
   const key = 'c:' + ch;
   if (request.method === 'GET') {
     const list = (await kv.get(key, 'json')) || [];
-    return json({ ok: true, ch, comments: list.slice(0, 100), total: list.length });
+    return json({ ok: true, ch, comments: list.slice(0, 100).map(pub), total: list.length });
+  }
+  if (request.method === 'DELETE') {
+    const u = new URL(request.url).searchParams, id = u.get('id') || '', tok = u.get('token') || '';
+    if (!/^[a-z0-9]{6,20}$/.test(id) || !/^[a-f0-9]{32}$/.test(tok)) return json({ ok: false, error: 'bad_request' }, 400);
+    const list = (await kv.get(key, 'json')) || [], i = list.findIndex(c => c.id === id);
+    if (i < 0) return json({ ok: false, error: 'not_found' }, 404);
+    if (!list[i].th || list[i].th !== await sha256(tok)) return json({ ok: false, error: 'forbidden' }, 403);
+    list.splice(i, 1);
+    await kv.put(key, JSON.stringify(list));
+    return json({ ok: true, deleted: id });
   }
   if (request.method !== 'POST') return json({ ok: false, error: 'method' }, 405);
   if (!fromSite(request)) return json({ ok: false, error: 'forbidden' }, 403);
@@ -385,11 +397,12 @@ async function novelComments(request, env) {
   if (env.COMMENT_RL) { try { const { success } = await env.COMMENT_RL.limit({ key: ip }); if (!success) return json({ ok: false, error: 'rate_limited' }, 429); } catch (e) {} }
   if (env.COMMENT_GATE) { try { if (!(await env.COMMENT_GATE.get(env.COMMENT_GATE.idFromName('ip:' + ip)).take(30_000))) return json({ ok: false, error: 'rate_limited' }, 429); } catch (e) {} }
   lastPost.set(ip, now); if (lastPost.size > 5000) lastPost.clear();
-  const item = { id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: c.name, text: c.text, at: new Date(now).toISOString() };
+  const token = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
+  const item = { id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: c.name, text: c.text, at: new Date(now).toISOString(), th: await sha256(token) };
   const list = (await kv.get(key, 'json')) || [];
   list.unshift(item);
   await kv.put(key, JSON.stringify(list.slice(0, MAX_KEEP)));
-  return json({ ok: true, comment: item });
+  return json({ ok: true, comment: pub(item), token });
 }
 
 // 每 IP 一個 Durable Object：強一致的 30 秒留言冷卻
