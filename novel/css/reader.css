@@ -149,3 +149,5 @@ html[data-theme="night"] .nc-au{color:#1b1b1b}
 .shelf-item .book-card{padding-right:4.5em}
 .shelf-del{position:absolute;top:50%;right:.6em;transform:translateY(-50%);border:1px solid #d9534f;color:#d9534f;background:transparent;border-radius:999px;padding:.2em .8em;font-size:.85em;cursor:pointer}
 .shelf-del:hover{background:#d9534f;color:#fff}
+
+.nc-act{margin-top:.35rem}

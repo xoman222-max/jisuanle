@@ -389,7 +389,7 @@
     function render(arr,total){
       cnt.textContent=total?'（'+total+'）':'';
       var mine=toks();
-      function one(c,rep){ return '<div class="nc-meta"><b>'+c.name+'</b>'+(c.au?' <span class="nc-au">作者</span>':'')+' · <time datetime="'+c.at+'">'+ago(c.at)+'</time><button type="button" class="nc-rep" data-id="'+c.id+'">回覆</button>'+(mine[c.id]?' <button type="button" class="nc-del" data-id="'+c.id+'">刪除</button>':'')+'</div><div class="nc-body">'+link(c.text).replace(/\n/g,'<br>')+'</div>'; }
+      function one(c,rep){ return '<div class="nc-meta"><b>'+c.name+'</b>'+(c.au?' <span class="nc-au">作者</span>':'')+' · <time datetime="'+c.at+'">'+ago(c.at)+'</time>'+(mine[c.id]?' <button type="button" class="nc-del" data-id="'+c.id+'">刪除</button>':'')+'</div><div class="nc-body">'+link(c.text).replace(/\n/g,'<br>')+'</div><div class="nc-act"><button type="button" class="nc-rep" data-id="'+c.id+'">回覆</button></div>'; }
       var tops=arr.filter(function(c){return !c.pid;}), kids={};
       arr.forEach(function(c){ if(c.pid){ (kids[c.pid]=kids[c.pid]||[]).push(c); } });
       list.innerHTML=tops.length?tops.map(function(c){ var k=(kids[c.id]||[]).slice().sort(function(a,b){return a.at<b.at?-1:1;}); return '<li data-id="'+c.id+'">'+one(c)+(k.length?'<ol class="nc-replies">'+k.map(function(r){return '<li>'+one(r,1)+'</li>';}).join('')+'</ol>':'')+'</li>'; }).join(''):'<li class="nc-empty">還沒有留言，來搶頭香吧！</li>';
