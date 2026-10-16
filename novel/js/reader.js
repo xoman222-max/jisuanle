@@ -260,33 +260,35 @@
         return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
       }
 
-      // bookshelf
+      // bookshelf (manual only) + recent reading
       if(shelfEl){
         if(books.length){
           let changed=false;
           shelfIds.slice().forEach(id=>{ if(!books.find(b=>b.id===id)){ delete shelf[id]; shelfIds.splice(shelfIds.indexOf(id),1); changed=true; } });
           if(changed) Novel.setShelf(shelf);
         }
-        const items = shelfIds.map(id => {
-          const book = books.find(b => b.id === id) || { id, title: shelf[id].title || id, blurb: "", updatedAt: null };
-          const tag = shelf[id].marked ? " · 已標記" : " · 最近開啟";
-          return `<div class="shelf-item">${cardHTML(book, tag)}<button type="button" class="shelf-del" data-del="${book.id}" aria-label="從書架移除">移除</button></div>`;
-        }).filter(Boolean);
-        shelfEl.onclick = (e)=>{
-          const b = e.target.closest(".shelf-del"); if(!b) return;
-          e.preventDefault();
-          const id = b.dataset.del; const s = Novel.getShelf(); delete s[id]; Novel.setShelf(s);
-          b.parentElement.remove();
-          if(!shelfEl.children.length) document.getElementById("shelf-empty")?.classList.remove("hidden");
+        const bk = id => books.find(b => b.id === id) || { id, title: shelf[id].title || id, blurb: "", updatedAt: null };
+        const markIds = shelfIds.filter(id => shelf[id].marked);
+        const recIds = shelfIds.filter(id => !shelf[id].marked && shelf[id].openedAt).slice(0,5);
+        const recEl = document.getElementById("recent");
+        const fill = (el, ids, emptyId, kind) => {
+          if(!el) return;
+          el.innerHTML = ids.map(id => `<div class="shelf-item">${cardHTML(bk(id), "")}<button type="button" class="shelf-del" data-del="${id}" data-kind="${kind}" aria-label="移除">移除</button></div>`).join("");
+          document.getElementById(emptyId)?.classList.toggle("hidden", ids.length>0);
+          el.onclick = (e)=>{
+            const b = e.target.closest(".shelf-del"); if(!b) return;
+            e.preventDefault();
+            const id = b.dataset.del; const st = Novel.getShelf();
+            if(st[id]){ if(kind==="shelf") st[id].marked=false; else delete st[id]; }
+            Novel.setShelf(st);
+            b.parentElement.remove();
+            if(!el.children.length) document.getElementById(emptyId)?.classList.remove("hidden");
+          };
         };
-        if(items.length){
-          shelfEl.innerHTML = items.join("");
-          document.getElementById("shelf-empty")?.classList.add("hidden");
-        }else{
-          shelfEl.innerHTML = "";
-          document.getElementById("shelf-empty")?.classList.remove("hidden");
-        }
+        fill(shelfEl, markIds, "shelf-empty", "shelf");
+        fill(recEl, recIds, "recent-empty", "recent");
       }
+
 
       function renderList(q){
         if(!listEl) return;
