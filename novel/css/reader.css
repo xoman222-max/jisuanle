@@ -93,3 +93,23 @@ h2{font-size:1.15rem; margin:1.4rem 0 .6rem; border-bottom:1px solid var(--line)
   .wrap{padding:12px 14px 40px}
   .toolbar{margin:0 -14px 12px; padding-left:14px; padding-right:14px}
 }
+/* 章節留言 */
+.novel-comments{margin:1.6rem 0 1rem; padding-top:1rem; border-top:1px solid var(--line); font-size:15px; line-height:1.7}
+.novel-comments .nc-title{font-size:1.05rem; border:0; margin:0 0 .7rem; padding:0}
+.nc-count{color:var(--muted); font-weight:400; font-size:.85rem}
+.nc-form{display:grid; gap:.5rem; margin-bottom:1rem}
+.nc-form input,.nc-form textarea{width:100%; padding:.6rem .8rem; border:1px solid var(--line); border-radius:.6rem; background:var(--card); color:var(--ink); font:inherit; font-size:16px; outline:none}
+.nc-form textarea{resize:vertical; min-height:4.5em}
+.nc-form input:focus,.nc-form textarea:focus{border-color:var(--accent)}
+.nc-hp{position:absolute!important; left:-9999px; width:1px!important; height:1px; opacity:0}
+.nc-row{display:flex; align-items:center; gap:.6rem; font-size:13px; color:var(--muted)}
+.nc-msg{flex:1}.nc-msg.err{color:#c0392b}.nc-msg.ok{color:var(--accent)}
+.nc-row button{appearance:none; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:999px; padding:.4rem 1rem; font-size:14px; cursor:pointer}
+body.night .nc-row button{color:#1b1b1b}
+.nc-row button:disabled{opacity:.5}
+.nc-list{list-style:none; margin:0; padding:0}
+.nc-list li{padding:.7rem 0; border-bottom:1px solid var(--line)}
+.nc-meta{font-size:13px; color:var(--muted)}
+.nc-meta b{color:var(--ink)}
+.nc-body{white-space:normal; word-break:break-word; margin-top:.15rem}
+.nc-empty{color:var(--muted); font-size:14px}

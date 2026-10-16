@@ -347,6 +347,63 @@ async function home(request, env) {
   return new Response(null, { status: 302, headers: { location: u.pathname + u.search, 'set-cookie': cookie, vary, 'cache-control': 'private, no-store' } });
 }
 
+/* 小說章節留言：GET/POST /api/novel-comments?ch=fridge/c02（KV） */
+const CH_RE = /^[a-z0-9-]{1,40}\/c\d{1,4}$/;
+const MAX_KEEP = 300;
+const lastPost = new Map();
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+export function cleanComment(name, text) {
+  name = String(name || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 20) || '讀者';
+  text = String(text || '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  let n = 0; // 只保留第一個連結
+  text = text.replace(/\b(?:https?:\/\/|www\.)\S+/gi, m => (++n === 1 ? m : '[連結已移除]'));
+  if (/(?:https?:\/\/|www\.)/i.test(name)) name = '讀者';
+  const len = [...text].length;
+  if (len < 2) return { error: 'too_short' };
+  if (len > 500) return { error: 'too_long' };
+  return { name: esc(name), text: esc(text) };
+}
+async function novelComments(request, env) {
+  const kv = env.NOVEL_COMMENTS;
+  if (!kv) return json({ ok: false, error: 'unavailable' }, 503);
+  const ch = new URL(request.url).searchParams.get('ch') || '';
+  if (!CH_RE.test(ch)) return json({ ok: false, error: 'bad_chapter' }, 400);
+  const key = 'c:' + ch;
+  if (request.method === 'GET') {
+    const list = (await kv.get(key, 'json')) || [];
+    return json({ ok: true, ch, comments: list.slice(0, 100), total: list.length });
+  }
+  if (request.method !== 'POST') return json({ ok: false, error: 'method' }, 405);
+  if (!fromSite(request)) return json({ ok: false, error: 'forbidden' }, 403);
+  let d; try { d = await request.json(); } catch (e) { return json({ ok: false, error: 'bad_json' }, 400); }
+  if (d && d.website) return json({ ok: true, ignored: true }); // 蜜罐
+  const c = cleanComment(d && d.name, d && d.text);
+  if (c.error) return json({ ok: false, error: c.error }, 400);
+  let ip = request.headers.get('cf-connecting-ip') || 'x', now = Date.now();
+  if (ip.includes(':')) ip = ip.split(':').slice(0, 4).join(':') + '::/64'; // IPv6 以 /64 計
+  if (now - (lastPost.get(ip) || 0) < 30_000) return json({ ok: false, error: 'rate_limited' }, 429);
+  if (env.COMMENT_RL) { try { const { success } = await env.COMMENT_RL.limit({ key: ip }); if (!success) return json({ ok: false, error: 'rate_limited' }, 429); } catch (e) {} }
+  if (env.COMMENT_GATE) { try { if (!(await env.COMMENT_GATE.get(env.COMMENT_GATE.idFromName('ip:' + ip)).take(30_000))) return json({ ok: false, error: 'rate_limited' }, 429); } catch (e) {} }
+  lastPost.set(ip, now); if (lastPost.size > 5000) lastPost.clear();
+  const item = { id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: c.name, text: c.text, at: new Date(now).toISOString() };
+  const list = (await kv.get(key, 'json')) || [];
+  list.unshift(item);
+  await kv.put(key, JSON.stringify(list.slice(0, MAX_KEEP)));
+  return json({ ok: true, comment: item });
+}
+
+// 每 IP 一個 Durable Object：強一致的 30 秒留言冷卻
+export class CommentGate extends DurableObject {
+  async take(ms) {
+    const now = Date.now(), last = (await this.ctx.storage.get('t')) || 0;
+    if (now - last < ms) return false;
+    await this.ctx.storage.put('t', now);
+    await this.ctx.storage.setAlarm(now + 3600e3);
+    return true;
+  }
+  async alarm() { await this.ctx.storage.deleteAll(); }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -359,6 +416,7 @@ export default {
     if (url.pathname === '/api/invoice') return invoice(request, env, ctx);
     if (url.pathname === '/api/rates') return rates(request, env, ctx);
     if (url.pathname === '/api/meme-caption') return memeCaption(request, env, ctx);
+    if (url.pathname === '/api/novel-comments') return novelComments(request, env);
     if (url.pathname.startsWith('/api/')) return json({ ok: false, error: 'not_found' }, 404);
     return env.ASSETS.fetch(request); // run_worker_first 只匹配 /api/*，其他路徑通常不會到這裡
   }
