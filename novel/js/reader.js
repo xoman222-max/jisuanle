@@ -262,11 +262,23 @@
 
       // bookshelf
       if(shelfEl){
+        if(books.length){
+          let changed=false;
+          shelfIds.slice().forEach(id=>{ if(!books.find(b=>b.id===id)){ delete shelf[id]; shelfIds.splice(shelfIds.indexOf(id),1); changed=true; } });
+          if(changed) Novel.setShelf(shelf);
+        }
         const items = shelfIds.map(id => {
           const book = books.find(b => b.id === id) || { id, title: shelf[id].title || id, blurb: "", updatedAt: null };
           const tag = shelf[id].marked ? " · 已標記" : " · 最近開啟";
-          return cardHTML(book, tag);
+          return `<div class="shelf-item">${cardHTML(book, tag)}<button type="button" class="shelf-del" data-del="${book.id}" aria-label="從書架移除">移除</button></div>`;
         }).filter(Boolean);
+        shelfEl.onclick = (e)=>{
+          const b = e.target.closest(".shelf-del"); if(!b) return;
+          e.preventDefault();
+          const id = b.dataset.del; const s = Novel.getShelf(); delete s[id]; Novel.setShelf(s);
+          b.parentElement.remove();
+          if(!shelfEl.children.length) document.getElementById("shelf-empty")?.classList.remove("hidden");
+        };
         if(items.length){
           shelfEl.innerHTML = items.join("");
           document.getElementById("shelf-empty")?.classList.add("hidden");

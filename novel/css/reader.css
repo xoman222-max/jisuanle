@@ -137,3 +137,8 @@ html[data-theme="green"] .nc-del:hover{background:#a8281b; color:#fff}
 .theme-opt .dot{display:inline-block; width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.35)}
 .dot-white{background:#fff}.dot-sepia{background:#f5ecd7}.dot-green{background:#cfe8cf}.dot-night{background:#1b1b1b; border-color:#888!important}
 .toolbar .theme-opt.on{border-color:var(--accent); color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent); font-weight:700}
+
+.shelf-item{position:relative}
+.shelf-item .book-card{padding-right:4.5em}
+.shelf-del{position:absolute;top:50%;right:.6em;transform:translateY(-50%);border:1px solid #d9534f;color:#d9534f;background:transparent;border-radius:999px;padding:.2em .8em;font-size:.85em;cursor:pointer}
+.shelf-del:hover{background:#d9534f;color:#fff}
