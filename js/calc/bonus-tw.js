@@ -16,10 +16,15 @@
     nrRate: 0.18
   };
 
-  /* opts: { salary, insured, payments: [金額...], resident: true } */
+  /* 健保投保金額：沿用勞健保試算的 Calc.healthGrade（js/rates.js 的 healthGrades＝健保署「投保金額分級表」），
+     取「≥ 月薪」的最小級距，超過最高級（313,000）以最高級計。 */
+  var TWN = (typeof module !== 'undefined' && module.exports) ? require('./tw.js') : null;
+  function insuredGrade(salary) { var T = TWN || root.Calc || {}; return salary > 0 && T.healthGrade ? T.healthGrade(salary) : salary; }
+
+  /* opts: { salary, insured, payments: [金額...], resident: true }；insured 未填時依月薪自動對應投保金額級距 */
   function calc(opts, C) {
     C = C || CONFIG;
-    var salary = Math.max(0, +opts.salary || 0), insured = +opts.insured > 0 ? +opts.insured : salary, resident = opts.resident !== false;
+    var salary = Math.max(0, +opts.salary || 0), insured = +opts.insured > 0 ? +opts.insured : insuredGrade(salary), resident = opts.resident !== false;
     var pays = (opts.payments || []).map(function (x) { return Math.max(0, Math.round(+x || 0)); }).filter(function (x) { return x > 0; });
     var nrLine = C.minWage * C.nrLowMult, cum = 0, nhiCum = 0, rows = [];
     pays.forEach(function (amt) {
@@ -40,7 +45,7 @@
     return { total: cum, insured: insured, nhiLine: insured * C.nhiMultiple, tax: tax, nhi: nhiCum, net: cum - tax - nhiCum, rows: rows, nrLine: nrLine };
   }
 
-  var api = { CONFIG: CONFIG, calc: calc };
+  var api = { CONFIG: CONFIG, calc: calc, insuredGrade: insuredGrade };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   root.BONUSTW = api;
 
@@ -49,11 +54,14 @@
   function n(id) { var x = parseFloat(($(id) || {}).value); return isNaN(x) ? 0 : x; }
   var form = document.querySelector('form[data-tool2="bonus-tw"]'); if (!form) return;
   var out = $('result'), insTouched = false;
-  $('insured').addEventListener('input', function () { insTouched = true; });
+  $('insured').addEventListener('input', function () { insTouched = $('insured').value !== ''; });
   function sync() {
     var byAmt = $('mode').value === 'amount', split = $('payway').value === 'split';
     $('fMode').hidden = split; $('fMonths').hidden = byAmt || split; $('fAmount').hidden = !byAmt || split; $('fSplit').hidden = !split;
-    if (!insTouched) $('insured').value = $('salary').value;
+    var g = insuredGrade(n('salary')), note = $('insNote');
+    if (!insTouched && document.activeElement !== $('insured')) $('insured').value = g || '';
+    if (note) note.textContent = insTouched ? '已手動修改；清空就會改回依分級表自動對應。'
+      : (g ? '已依健保投保金額分級表自動對應：月薪 ' + fmt(n('salary')) + ' 元 → 投保金額 ' + fmt(g) + ' 元。薪資單上不同可以直接改。' : '');
   }
   function render() {
     sync();
