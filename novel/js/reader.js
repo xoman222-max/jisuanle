@@ -236,75 +236,191 @@
       }catch(e){
         console.warn("books.json load failed", e);
       }
-      const shelfEl = document.getElementById("bookshelf");
-      const listEl = document.getElementById("book-list");
-      const searchInput = document.getElementById("novel-search");
-      const shelf = this.getShelf();
-      const shelfIds = Object.keys(shelf).filter(id => shelf[id] && (shelf[id].marked || shelf[id].openedAt));
-      // prefer marked first, then recent opened
-      shelfIds.sort((a,b)=>{
-        const A = shelf[a], B = shelf[b];
-        if(!!A.marked !== !!B.marked) return A.marked ? -1 : 1;
-        return String(B.openedAt||"").localeCompare(String(A.openedAt||""));
-      });
+      const HUB = window.NOVEL_HUB || {};
+      const META = HUB.meta || {};
+      const HIDE = HUB.hide || [];
+      // 下架／取消的書一律不顯示
+      books = (Array.isArray(books) ? books : []).filter(b => b && b.id && !b.hidden && b.status !== "cancelled" && HIDE.indexOf(b.id) < 0);
+      const loaded = books.length > 0;
 
-      function cardHTML(book, extra){
-        const upd = Novel.hasUpdate(book.updatedAt, book.id);
-        const badge = upd ? '<span class="badge-update">有更新</span>' : '';
-        return `<a class="book-card" href="./${book.id}/" data-book-id="${book.id}">
-          <b>${escapeHtml(book.title)}${badge}</b>
-          <small>${escapeHtml(book.blurb || "")}${extra||""}</small>
-        </a>`;
-      }
+      const shelfEl = document.getElementById("bookshelf");
+      const recEl = document.getElementById("recent");
+      const listEl = document.getElementById("book-list");
+      const heroEl = document.getElementById("hub-hero");
+      const searchInput = document.getElementById("novel-search");
+
       function escapeHtml(s){
         return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
       }
+      const esc = escapeHtml;
+      // 簡體模式：OpenCC 已載入時，動態內容也要轉換
+      function cv(el){
+        const f = window.__novelT2S; if(!f || !el) return;
+        const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null); let n;
+        while((n = w.nextNode())){ if(n.nodeValue.trim()) n.nodeValue = f(n.nodeValue); }
+      }
+      const tx = s => window.__novelT2S ? window.__novelT2S(s) : s;
+      const chapters = b => (b.volumes || []).reduce((a, v) => a.concat(v.chapters || []), []);
+      const chIndex = (b, cid) => { const all = chapters(b); const i = all.findIndex(c => c.id === cid); return i < 0 ? null : { n: i + 1, c: all[i] }; };
+      const chHref = (b, c) => "./" + b.id + "/" + (c.path || c.id);
+      const md = iso => { try{ const d = new Date(iso); return isNaN(d) ? "" : (d.getMonth() + 1) + "/" + d.getDate(); }catch(e){ return ""; } };
+      const bk = id => books.find(b => b.id === id) || { id, title: (Novel.getShelf()[id] || {}).title || id, blurb: "", updatedAt: null, volumes: [] };
 
-      // bookshelf (manual only) + recent reading
-      if(shelfEl){
-        if(books.length){
-          let changed=false;
-          shelfIds.slice().forEach(id=>{ if(!books.find(b=>b.id===id)){ delete shelf[id]; shelfIds.splice(shelfIds.indexOf(id),1); changed=true; } });
+      function coverHTML(book, cls){
+        const m = META[book.id] || {};
+        const src = m.cover || ("./img/" + book.id + ".webp");
+        return `<a class="nb-cover ${cls || ""} nb-cv-${esc(book.id)}" href="./${esc(book.id)}/" tabindex="-1" aria-hidden="true">`
+          + `<span class="nb-cover-fb"><span class="nb-cover-title">${esc(book.title)}</span><span class="nb-cover-brand">算了小說</span></span>`
+          + `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" width="400" height="600" onerror="this.remove()"></a>`;
+      }
+      function readBtn(book, cls){
+        const p = Novel.getBookProgress(book.id);
+        const at = p && chIndex(book, p.chapterId);
+        if(at) return `<a class="nb-btn nb-btn-primary ${cls || ""}" href="${esc(chHref(book, at.c))}">繼續閱讀 · 第${at.n}章</a>`;
+        const first = chapters(book)[0];
+        return `<a class="nb-btn nb-btn-primary ${cls || ""}" href="${esc(first ? chHref(book, first) : "./" + book.id + "/")}">開始閱讀</a>`;
+      }
+      function markBtn(book){
+        const on = Novel.isOnShelf(book.id);
+        return `<button type="button" class="nb-btn nb-btn-ghost${on ? " on" : ""}" data-mark-book="${esc(book.id)}" aria-pressed="${on}">${on ? "已在書架" : "加入書架"}</button>`;
+      }
+      function metaLine(book){
+        const n = chapters(book).length;
+        const d = md(book.updatedAt);
+        return `${n ? n + " 章" : ""}${n ? " · " : ""}連載中${d ? " · " + d + " 更新" : ""}`;
+      }
+      function cardHTML(book){
+        const m = META[book.id] || {};
+        const upd = Novel.hasUpdate(book.updatedAt, book.id);
+        const badge = upd ? '<span class="badge-update">有更新</span>' : '';
+        return `<article class="book-card nb-card" data-book-id="${esc(book.id)}">
+          ${coverHTML(book)}
+          <div class="nb-info">
+            <h3 class="nb-title"><a href="./${esc(book.id)}/">${esc(book.title)}</a>${badge}</h3>
+            <div class="nb-meta">${m.genre ? `<span class="nb-tag">${esc(m.genre)}</span>` : ""}<span>${metaLine(book)}</span></div>
+            <p class="nb-blurb">${esc(book.blurb || "")}</p>
+            <div class="nb-actions">${readBtn(book)}${markBtn(book)}</div>
+          </div>
+        </article>`;
+      }
+      function shelfCardHTML(book, kind){
+        const upd = Novel.hasUpdate(book.updatedAt, book.id);
+        const badge = upd ? '<span class="badge-update">有更新</span>' : '';
+        const p = Novel.getBookProgress(book.id);
+        const at = p && chIndex(book, p.chapterId);
+        const total = chapters(book).length;
+        const pct = at && total ? Math.round(((at.n - 1) + (p.scrollPct || 0) / 100) / total * 100) : 0;
+        const href = at ? chHref(book, at.c) : "./" + book.id + "/";
+        const line = at ? `讀到第${at.n}章${total ? " / 共" + total + "章" : ""}` : (total ? "尚未開始 · 共" + total + "章" : "尚未開始");
+        return `<div class="shelf-item">
+          ${coverHTML(book, "nb-cover-sm")}
+          <a class="book-card nb-shelf-card" href="${esc(href)}" data-book-id="${esc(book.id)}">
+            <b>${esc(book.title)}${badge}</b>
+            <small>${line}</small>
+            <span class="nb-progress" aria-hidden="true"><i style="width:${pct}%"></i></span>
+          </a>
+          <button type="button" class="shelf-del" data-del="${esc(book.id)}" data-kind="${kind}" aria-label="移除">移除</button>
+        </div>`;
+      }
+
+      // bookshelf (manual only) + recent reading (up to 5)
+      function renderShelves(){
+        if(!shelfEl && !recEl) return;
+        const shelf = Novel.getShelf();
+        let ids = Object.keys(shelf).filter(id => shelf[id] && (shelf[id].marked || shelf[id].openedAt));
+        if(loaded){
+          let changed = false;
+          ids = ids.filter(id => { if(books.find(b => b.id === id)) return true; delete shelf[id]; changed = true; return false; });
           if(changed) Novel.setShelf(shelf);
         }
-        const bk = id => books.find(b => b.id === id) || { id, title: shelf[id].title || id, blurb: "", updatedAt: null };
-        const markIds = shelfIds.filter(id => shelf[id].marked);
-        const recIds = shelfIds.filter(id => !shelf[id].marked && shelf[id].openedAt).slice(0,5);
-        const recEl = document.getElementById("recent");
-        const fill = (el, ids, emptyId, kind) => {
+        // prefer marked first, then recent opened
+        ids.sort((a, b) => {
+          const A = shelf[a], B = shelf[b];
+          if(!!A.marked !== !!B.marked) return A.marked ? -1 : 1;
+          return String(B.openedAt || "").localeCompare(String(A.openedAt || ""));
+        });
+        const markIds = ids.filter(id => shelf[id].marked);
+        const recIds = ids.filter(id => !shelf[id].marked && shelf[id].openedAt).slice(0, 5);
+        const fill = (el, list, emptyId, kind) => {
           if(!el) return;
-          el.innerHTML = ids.map(id => `<div class="shelf-item">${cardHTML(bk(id), "")}<button type="button" class="shelf-del" data-del="${id}" data-kind="${kind}" aria-label="移除">移除</button></div>`).join("");
-          document.getElementById(emptyId)?.classList.toggle("hidden", ids.length>0);
-          el.onclick = (e)=>{
+          el.innerHTML = list.map(id => shelfCardHTML(bk(id), kind)).join("");
+          document.getElementById(emptyId)?.classList.toggle("hidden", list.length > 0);
+          cv(el);
+          el.onclick = (e) => {
             const b = e.target.closest(".shelf-del"); if(!b) return;
             e.preventDefault();
             const id = b.dataset.del; const st = Novel.getShelf();
-            if(st[id]){ if(kind==="shelf") st[id].marked=false; else delete st[id]; }
+            if(st[id]){ if(kind === "shelf") st[id].marked = false; else delete st[id]; }
             Novel.setShelf(st);
-            b.parentElement.remove();
-            if(!el.children.length) document.getElementById(emptyId)?.classList.remove("hidden");
+            renderShelves(); syncMarks();
           };
         };
         fill(shelfEl, markIds, "shelf-empty", "shelf");
         fill(recEl, recIds, "recent-empty", "recent");
       }
+      function syncMarks(){
+        document.querySelectorAll("[data-mark-book]").forEach(b => {
+          const on = Novel.isOnShelf(b.getAttribute("data-mark-book"));
+          b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+          b.textContent = tx(on ? "已在書架" : "加入書架");
+        });
+      }
 
+      function renderHero(){
+        if(!heroEl || !loaded) return;
+        const fid = HUB.featured;
+        const book = books.find(b => b.id === fid) || books.slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
+        if(!book) return;
+        const m = META[book.id] || {};
+        heroEl.setAttribute("data-book-id", book.id);
+        heroEl.className = "nb-hero nb-cv-" + book.id;
+        // 絕對網址：避免 url() 被當成相對於 CSS 檔
+        let heroImg = m.cover || ("./img/" + book.id + ".webp");
+        try{ heroImg = new URL(heroImg, location.href).href; }catch(e){}
+        heroEl.style.setProperty("--hero-img", `url("${heroImg.replace(/["\\]/g, "")}")`);
+        heroEl.innerHTML = `<div class="nb-hero-bg" aria-hidden="true"></div>
+          <div class="nb-hero-in">
+            ${coverHTML(book, "nb-cover-hero")}
+            <div class="nb-hero-text">
+              <span class="nb-kicker">本週主打</span>
+              <h2 class="nb-hero-title"><a href="./${esc(book.id)}/">${esc(book.title)}</a></h2>
+              <div class="nb-meta">${m.genre ? `<span class="nb-tag">${esc(m.genre)}</span>` : ""}<span>${metaLine(book)}</span></div>
+              <p class="nb-hero-blurb">${esc(m.tagline || book.blurb || "")}</p>
+              <div class="nb-actions">${readBtn(book)}${markBtn(book)}</div>
+            </div>
+          </div>`;
+        cv(heroEl);
+      }
 
       function renderList(q){
         if(!listEl) return;
-        const qq = (q||"").trim().toLowerCase();
+        const qq = (q || "").trim().toLowerCase();
         const filtered = books.filter(b => {
           if(!qq) return true;
-          const hay = (b.title + " " + (b.blurb||"")).toLowerCase();
+          const hay = (b.title + " " + (b.blurb || "") + " " + ((META[b.id] || {}).genre || "")).toLowerCase();
           return hay.includes(qq);
         });
         if(!filtered.length){
-          listEl.innerHTML = '<p class="search-empty">沒有符合的書。</p>';
+          listEl.innerHTML = '<p class="search-empty">' + (loaded ? "沒有符合的書。" : "書單載入失敗，請重新整理。") + '</p>';
+          cv(listEl);
           return;
         }
         listEl.innerHTML = filtered.map(b => cardHTML(b)).join("");
+        cv(listEl);
       }
-      renderList("");
+
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest && e.target.closest("[data-mark-book]"); if(!b) return;
+        e.preventDefault();
+        const id = b.getAttribute("data-mark-book");
+        const book = bk(id);
+        Novel.toggleMark(id, { title: book.title });
+        syncMarks(); renderShelves();
+      });
+
+      renderShelves();
+      renderHero();
+      if(loaded || listEl && !listEl.children.length) renderList("");
       if(searchInput){
         searchInput.addEventListener("input", ()=> renderList(searchInput.value));
       }
