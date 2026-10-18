@@ -283,3 +283,33 @@ button{font:inherit}
   .theme-opt.on{padding:0 6px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* 分享按鈕 + 選單（與 reader.css 相同樣式） */
+:root{--sh-bg:var(--surface); --sh-hover:var(--surface2)}
+.share-btn{appearance:none; white-space:nowrap; flex:none; display:inline-flex; align-items:center; gap:.35em; border:1px solid var(--line); background:var(--sh-bg); color:var(--ink); border-radius:999px; padding:.4rem .9rem; font-size:14px; line-height:1.3; cursor:pointer; font-family:inherit; vertical-align:middle}
+.share-btn svg{flex:none}
+.share-btn:hover,.share-btn.on{border-color:var(--accent); color:var(--accent)}
+.share-btn:focus-visible,.share-item:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.share-menu{position:fixed; z-index:1000; min-width:208px; padding:6px; background:var(--sh-bg); color:var(--ink); border:1px solid var(--line); border-radius:14px; box-shadow:0 10px 30px -8px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.08); font-size:14px; line-height:1.4; animation:sh-in .12s ease-out}
+@keyframes sh-in{from{opacity:0; transform:translateY(-4px)}to{opacity:1; transform:none}}
+.share-head{display:flex; align-items:center; justify-content:space-between; padding:2px 6px 6px 10px; color:var(--muted); font-size:12px; font-weight:700; letter-spacing:.05em}
+.share-x{appearance:none; border:0; background:transparent; color:var(--muted); font-size:20px; line-height:1; cursor:pointer; padding:0 6px; border-radius:8px}
+.share-x:hover{color:var(--accent)}
+.share-item{display:flex; align-items:center; gap:10px; width:100%; padding:9px 10px; border:0; border-radius:10px; background:transparent; color:var(--ink)!important; text-decoration:none!important; font:inherit; text-align:left; cursor:pointer}
+.share-item:hover,.share-item:focus{background:var(--sh-hover)}
+.share-ic{flex:none; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-weight:800; font-size:13px; color:#fff; font-family:Arial,Helvetica,sans-serif}
+.share-ic-link{background:var(--accent)}
+.share-ic-x{background:#111}
+.share-ic-fb{background:#1877f2; font-size:16px}
+.share-ic-line{background:#06c755}
+.share-ic-threads{background:#111; font-size:15px}
+html[data-theme="night"] .share-ic-link{color:#1b1b1b}
+html[data-theme="night"] .share-ic-x,html[data-theme="night"] .share-ic-threads{background:#f2f2f2; color:#111}
+.share-menu.sheet{left:8px!important; right:8px; top:auto!important; bottom:calc(8px + env(safe-area-inset-bottom)); min-width:0; padding:8px; border-radius:18px; animation:sh-up .16s ease-out}
+.share-menu.sheet .share-item{padding:12px; font-size:15px}
+@keyframes sh-up{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+.share-toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); z-index:1001; transform:translate(-50%,10px); background:var(--ink); color:var(--sh-bg); padding:.55rem 1.1rem; border-radius:999px; font-size:14px; line-height:1.3; box-shadow:0 6px 18px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:opacity .18s, transform .18s}
+.share-toast.show{opacity:1; transform:translate(-50%,0)}
+.nb-top-in .share-home{display:inline-flex; height:34px; padding:0 12px; font-size:14px; line-height:1; background:var(--surface)}
+html[data-theme="night"] .share-toast{color:#1b1b1b}
+@media (max-width:560px){ .nb-top-in .share-home{order:2; width:34px; padding:0; justify-content:center} .nb-top-in .share-home span{display:none} }

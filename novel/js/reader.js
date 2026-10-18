@@ -562,3 +562,133 @@
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go();
 })();
+
+/* 分享按鈕：行動裝置用系統分享（navigator.share），其他顯示選單（複製連結／X／Facebook／LINE／Threads） */
+(function(){
+  function tx(s){ return window.__novelT2S ? window.__novelT2S(s) : s; }
+  function clean(s){ return String(s||"").replace(/\s+/g," ").trim(); }
+  function shareUrl(){
+    var p=location.pathname.replace(/\/index\.html$/,"/").replace(/\.html$/,"");
+    return location.origin+p;
+  }
+  function info(){
+    var ch=document.querySelector(".chapter-title");
+    if(ch){
+      var a=document.querySelector(".topbar a"), book=a?clean(a.textContent).replace(/^←\s*/,""):"";
+      if(!book) book=clean((document.title.split("｜")[1])||"");
+      var c=clean(ch.textContent);
+      return { title: (book?"《"+book+"》":"")+c, text: (book?"《"+book+"》":"")+c };
+    }
+    if(document.body.classList.contains("nb-home")){
+      return { title: document.title, text: "算了小說｜免費線上閱讀原創網路小說" };
+    }
+    var h=document.querySelector("main h1"), b=h?clean(h.textContent):clean(document.title.split("｜")[0]);
+    return { title: "《"+b+"》", text: "《"+b+"》" };
+  }
+  var ICON='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
+  function mkBtn(cls, label){
+    var b=document.createElement("button"); b.type="button"; b.className="share-btn "+(cls||"");
+    b.setAttribute("aria-haspopup","menu"); b.setAttribute("aria-expanded","false");
+    b.innerHTML=ICON+'<span>'+label+'</span>';
+    b.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); onShare(b); });
+    return b;
+  }
+  var menu=null, owner=null, toastEl=null, toastT=0;
+  function toast(msg){
+    if(!toastEl){ toastEl=document.createElement("div"); toastEl.className="share-toast"; toastEl.setAttribute("role","status"); toastEl.setAttribute("aria-live","polite"); document.body.appendChild(toastEl); }
+    toastEl.textContent=tx(msg); toastEl.classList.add("show");
+    clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); },1800);
+  }
+  function copy(url){
+    function legacy(){
+      var ta=document.createElement("textarea"); ta.value=url; ta.setAttribute("readonly","");
+      ta.style.cssText="position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+      document.body.appendChild(ta); ta.select(); var ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+      ta.remove(); return ok;
+    }
+    var done=function(){ toast("已複製"); }, fail=function(){ if(legacy()) done(); else toast("複製失敗，請手動複製網址"); };
+    if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(url).then(done, fail); } else fail();
+  }
+  function close(){
+    if(!menu) return; menu.remove(); menu=null;
+    if(owner){ owner.setAttribute("aria-expanded","false"); owner.classList.remove("on"); owner=null; }
+  }
+  function openMenu(btn){
+    close();
+    var u=shareUrl(), d=info(), eu=encodeURIComponent(u), et=encodeURIComponent(d.text);
+    var items=[
+      ["copy","複製連結",null,"share-ic-link"],
+      ["x","分享到 X","https://x.com/intent/post?text="+et+"&url="+eu,"share-ic-x"],
+      ["fb","分享到 Facebook","https://www.facebook.com/sharer/sharer.php?u="+eu,"share-ic-fb"],
+      ["line","分享到 LINE","https://social-plugins.line.me/lineit/share?url="+eu,"share-ic-line"],
+      ["threads","分享到 Threads","https://www.threads.net/intent/post?text="+encodeURIComponent(d.text+" "+u),"share-ic-threads"]
+    ];
+    var G={copy:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',x:'𝕏',fb:'f',line:'L',threads:'@'};
+    menu=document.createElement("div"); menu.className="share-menu"; menu.setAttribute("role","menu"); menu.setAttribute("aria-label",tx("分享"));
+    menu.innerHTML='<div class="share-head"><span>'+tx("分享")+'</span><button type="button" class="share-x" aria-label="'+tx("關閉")+'">×</button></div>'+
+      items.map(function(it){
+        var ic='<i class="share-ic '+it[3]+'" aria-hidden="true">'+G[it[0]]+'</i><span>'+tx(it[1])+'</span>';
+        return it[2] ? '<a role="menuitem" class="share-item" data-k="'+it[0]+'" href="'+it[2]+'" target="_blank" rel="noopener noreferrer">'+ic+'</a>'
+                     : '<button role="menuitem" type="button" class="share-item" data-k="'+it[0]+'">'+ic+'</button>';
+      }).join("");
+    document.body.appendChild(menu);
+    owner=btn; btn.setAttribute("aria-expanded","true"); btn.classList.add("on");
+    menu.addEventListener("click", function(e){
+      e.stopPropagation();
+      if(e.target.closest(".share-x")){ close(); return; }
+      var it=e.target.closest(".share-item"); if(!it) return;
+      if(it.getAttribute("data-k")==="copy"){ copy(u); close(); return; }
+      setTimeout(close,0);
+    });
+    place();
+    var f=menu.querySelector(".share-item"); if(f) try{ f.focus({preventScroll:true}); }catch(e){}
+  }
+  function place(){
+    if(!menu || !owner) return;
+    if(window.innerWidth<=560){ menu.classList.add("sheet"); menu.style.left=menu.style.top=""; return; }
+    menu.classList.remove("sheet");
+    var r=owner.getBoundingClientRect(), w=menu.offsetWidth, h=menu.offsetHeight;
+    var left=Math.min(Math.max(8, r.left), window.innerWidth-w-8);
+    var top=r.bottom+6; if(top+h>window.innerHeight-8 && r.top-h-6>8) top=r.top-h-6;
+    menu.style.left=left+"px"; menu.style.top=top+"px";
+  }
+  function onShare(btn){
+    if(menu && owner===btn){ close(); return; }
+    var d=info(), u=shareUrl();
+    var mobile=window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
+    if(navigator.share && mobile){
+      navigator.share({ title: d.title, text: d.text, url: u }).catch(function(err){
+        if(!err || err.name!=="AbortError") openMenu(btn);
+      });
+      return;
+    }
+    openMenu(btn);
+  }
+  document.addEventListener("click", function(e){ if(menu && !menu.contains(e.target)) close(); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && menu){ var o=owner; close(); if(o) o.focus(); } });
+  window.addEventListener("resize", place);
+  window.addEventListener("scroll", function(){ if(menu && !menu.classList.contains("sheet")) place(); }, { passive:true });
+
+  function go(){
+    if(document.querySelector(".share-btn")) return;
+    var label=tx("分享");
+    if(document.body.classList.contains("nb-home")){
+      var bar=document.querySelector(".nb-top-in"); if(bar) bar.appendChild(mkBtn("share-home", label));
+      return;
+    }
+    var ch=document.querySelector(".chapter-title");
+    var mark=document.querySelector("[data-mark]");
+    var top=mkBtn("share-top", label);
+    if(mark) mark.parentNode.insertBefore(top, mark.nextSibling);
+    else { var h=ch||document.querySelector("main h1"); if(h) h.parentNode.insertBefore(top, h); }
+    if(ch){
+      var body=document.querySelector(".chapter-body");
+      if(body){
+        var row=document.createElement("div"); row.className="share-row";
+        row.appendChild(mkBtn("share-bottom", tx("分享本章")));
+        body.parentNode.insertBefore(row, body.nextSibling);
+      }
+    }
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",go); else go();
+})();
