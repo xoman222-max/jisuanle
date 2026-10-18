@@ -184,3 +184,4 @@ html[data-theme="night"] .share-ic-x,html[data-theme="night"] .share-ic-threads{
 .share-row{display:flex; justify-content:center; margin:1.8rem 0 -0.6rem}
 .share-row .share-btn{padding:.5rem 1.2rem; font-size:15px}
 .share-row .share-btn:not(:hover){color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.mark-btn{vertical-align:middle}
