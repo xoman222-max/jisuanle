@@ -1,0 +1,4 @@
+Contact: mailto:ai2chuio@mail.grokbot.com
+Expires: 2027-10-20T00:00:00.000Z
+Preferred-Languages: zh-TW, en
+Canonical: https://jisuanle.com/.well-known/security.txt
