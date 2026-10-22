@@ -287,7 +287,7 @@
       function metaLine(book){
         const n = chapters(book).length;
         const d = md(book.updatedAt);
-        return `${n ? n + " 章" : ""}${n ? " · " : ""}連載中${d ? " · " + d + " 更新" : ""}`;
+        return `${n ? n + " 章" : ""}${n ? " · " : ""}${esc(book.status || "連載中")}${d ? " · " + d + " 更新" : ""}`;
       }
       function cardHTML(book){
         const m = META[book.id] || {};
