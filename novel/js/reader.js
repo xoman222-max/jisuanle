@@ -366,6 +366,15 @@
         });
       }
 
+      function renderUpdates(){
+        const el = document.getElementById("hub-updates");
+        if(!el || !loaded) return;
+        const list = books.filter(b => b.updatedAt).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 3);
+        const ul = el.querySelector(".nb-upd-list");
+        if(!ul) return;
+        ul.innerHTML = list.map(b => `<li><span class="nb-upd-date">${esc(md(b.updatedAt))}</span><a href="./${esc(b.id)}/" title="${esc(b.title)}">${esc(b.title)}</a> 第${chapters(b).length}章</li>`).join("");
+        cv(el);
+      }
       function renderHero(){
         if(!heroEl || !loaded) return;
         const fid = HUB.featured;
@@ -420,6 +429,7 @@
 
       renderShelves();
       renderHero();
+      renderUpdates();
       if(loaded || listEl && !listEl.children.length) renderList("");
       if(searchInput){
         searchInput.addEventListener("input", ()=> renderList(searchInput.value));

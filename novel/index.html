@@ -40,6 +40,10 @@
 <main class="nb-wrap">
   <h1 class="nb-h1">小說<small>無會員、無付費牆。進度與書架存在本機瀏覽器。</small></h1>
 
+  <div class="nb-toprow">
+  <!-- 最近更新：JS 依 books.json 的 updatedAt 與章數重新渲染 -->
+  <section id="hub-updates" class="nb-updates" aria-label="最近更新"><h2 class="nb-upd-h">最近更新</h2><ul class="nb-upd-list"><li><span class="nb-upd-date">10/22</span><a href="./fridge/" title="我家冰箱通異界，只收過期食物">我家冰箱通異界，只收過期食物</a> 第60章</li><li><span class="nb-upd-date">10/22</span><a href="./mentor/" title="穿成反派後，我成了主角的人生導師">穿成反派後，我成了主角的人生導師</a> 第70章</li><li><span class="nb-upd-date">10/21</span><a href="./zhibo/" title="直播帶貨帶出了修仙">直播帶貨帶出了修仙</a> 第40章</li></ul></section>
+
   <!-- 主打橫幅：JS 依 books.json 重新渲染；以下為無 JS／載入失敗時的靜態內容 -->
   <section id="hub-hero" class="nb-hero nb-cv-mentor" aria-label="主打作品" style="--hero-img:url('/novel/img/mentor.webp')">
     <div class="nb-hero-bg" aria-hidden="true"></div>
@@ -54,6 +58,7 @@
       </div>
     </div>
   </section>
+  </div>
 
   <div class="search-row nb-search">
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
