@@ -6,6 +6,8 @@ var TAB={"ba":["BA","BA","PA","BA"],"bo":["BO","BO","PO","BO"],"bai":["BAI","BAI
 var SYS={hy:0,ty:1,wg:2,m2:3};
 var D=null;
 function dict(){ if(D) return D; D={}; var s=G.PP_DICT||''; s.split('|').forEach(function(x){ if(!x) return; var c=x.charAt(0), r=x.slice(1).split('/').filter(function(p){return TAB[p];}); if(!r.length) r=x.slice(1).split('/'); D[c]=r; }); return D; }
+// 簡體→繁體：OpenCC STCharacters（Apache-2.0），只轉換非 Big5 的簡體字（避免 里/台/后 等誤轉）
+var S2T=null; function s2t(s){ if(!S2T){ S2T={}; var m=G.PP_S2T||''; for(var i=0;i+1<m.length;i+=2) S2T[m.charAt(i)]=m.charAt(i+1); } return String(s).replace(/./g,function(c){return S2T[c]||c;}); }
 function T(c){ return c==='臺'?'台':c; }
 function readings(c){ var d=dict(); return d[c]||d[T(c)]||(c==='台'?d['臺']:null)||[]; }
 // 姓氏讀音（多音字姓氏的正確讀法）
@@ -15,7 +17,7 @@ function conv(py,sys){ var r=TAB[py]; return r?r[SYS[sys]||0]:py.replace('v','yu
 function splitName(full,mode){ full=full.replace(/[\s,，、．.·]/g,''); var n=mode==='2'?2:mode==='1'?1:(full.length>=3&&COMP.indexOf(full.slice(0,2))>=0?2:1); return [full.slice(0,n),full.slice(n)]; }
 function surPy(s){ if(SUR[s]) return SUR[s].split('-'); var out=[]; for(var i=0;i<s.length;i++){ var c=s.charAt(i); out.push(SUR[c]||SUR[T(c)]||(readings(c)[0]||'?')); } return out; }
 // name(full,{sys,mode,picks}) → {sur,given,text,poly:[{i,ch,opts}]}
-function name(full,o){ o=o||{}; var sys=o.sys||'hy', parts=splitName(full,o.mode); var sp=surPy(parts[0]); var picks=o.picks||{}; var poly=[], gs=[];
+function name(full,o){ o=o||{}; full=s2t(full); var sys=o.sys||'hy', parts=splitName(full,o.mode); var sp=surPy(parts[0]); var picks=o.picks||{}; var poly=[], gs=[];
   for(var i=0;i<parts[1].length;i++){ var c=parts[1].charAt(i), rs=readings(c); var u=[]; rs.forEach(function(p){ var x=conv(p,sys); if(u.indexOf(x)<0) u.push(x); });
     var pick=picks[i]!=null&&rs[picks[i]]?picks[i]:0; if(rs.length>1){ poly.push({i:i,ch:c,opts:rs.map(function(p){return conv(p,sys);}),py:rs,sel:pick}); }
     gs.push(rs.length?conv(rs[pick],sys):'?'); }
@@ -33,7 +35,7 @@ var DIR={'東':'E.','西':'W.','南':'S.','北':'N.'};
 function roadRule(r){ var m=r.match(/^(.*?)(東|西|南|北)?(路|街|大道|道)$/); if(!m) return pyWord(r); var base=m[1],ord_='', mm=base.match(new RegExp('^(.+?)('+NUM+')$'));
   if(mm&&!/^\d/.test(mm[1].slice(-1))){ base=mm[1]; ord_=' '+ord(cnum(mm[2])); }
   var suf={'路':'Rd.','街':'St.','大道':'Blvd.','道':'Rd.'}[m[3]]; return pyWord(base)+ord_+(m[2]?' '+DIR[m[2]]:'')+' '+suf; }
-function norm(s){ return s.replace(/臺/g,'台').replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248);}).replace(/[\s,，]/g,'').replace(/－|—|-/g,'之'); }
+function norm(s){ return s2t(s).replace(/臺/g,'台').replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248);}).replace(/[\s,，]/g,'').replace(/－|—|-/g,'之'); }
 // addr(s) → {text, parts:[{zh,en,what}], warn:[]}
 function addr(src){ var R=G.PP_ROADS, s=norm(src), P=[], W=[], zip='';
   var m=s.match(/^(\d{3,6})/); if(m){ zip=m[1]; s=s.slice(zip.length); }
@@ -77,34 +79,36 @@ function addr(src){ var R=G.PP_ROADS, s=norm(src), P=[], W=[], zip='';
   parts.push({zh:'',en:'Taiwan (R.O.C.)',what:'國名'});
   return {text:parts.map(function(p){return p.en;}).join(', '),parts:parts,warn:W,zip3:area?area[1]:''}; }
 
-var API={name:name,addr:addr,readings:readings,TAB:TAB};
+var API={name:name,addr:addr,s2t:s2t,readings:readings,TAB:TAB};
 G.PP=API; if(typeof module!=='undefined') module.exports=API;
 
 // ---------- UI ----------
 if(typeof document==='undefined') return;
+var CNUI=document.body&&document.body.getAttribute('data-ed')==='cn', T2S={"吳": "吴", "國": "国", "領": "领", "謝": "谢", "縣": "县", "聞": "闻", "會": "会", "單": "单", "漢": "汉", "樂": "乐", "說": "说", "載": "载", "軒": "轩", "幾": "几", "兩": "两", "號": "号", "確": "确", "唸": "念", "頁": "页", "認": "认", "種": "种", "選": "选", "華": "华", "東": "东", "獨": "独", "貝": "贝", "閭": "闾", "紀": "纪", "離": "离", "讀": "读", "欄": "栏", "門": "门", "轉": "转", "許": "许", "間": "间", "鍾": "钟", "輸": "输", "鄉": "乡", "鐘": "钟", "詢": "询", "麴": "曲", "瑪": "玛", "塗": "涂", "臺": "台", "護": "护", "簡": "简", "闞": "阚", "蓋": "盖", "碼": "码", "樓": "楼", "換": "换", "呂": "吕", "鄰": "邻", "宮": "宫", "車": "车", "劉": "刘", "為": "为", "無": "无", "費": "费", "繆": "缪", "莊": "庄", "則": "则", "實": "实", "灣": "湾", "覺": "觉", "頭": "头", "鎮": "镇", "複": "复", "葉": "叶", "陽": "阳", "溫": "温", "規": "规", "連": "连", "遞": "递", "顏": "颜", "譯": "译", "馮": "冯", "開": "开", "語": "语", "資": "资", "調": "调", "張": "张", "孫": "孙", "馬": "马", "長": "长", "陳": "陈", "鮮": "鲜", "賈": "贾", "層": "层", "製": "制", "請": "请", "後": "后", "區": "区", "參": "参", "諸": "诸", "敗": "败", "歐": "欧", "較": "较", "聲": "声", "黃": "黄", "藺": "蔺", "遲": "迟", "郵": "邮", "藍": "蓝", "轅": "辕", "對": "对", "龔": "龚", "務": "务", "員": "员", "際": "际", "識": "识"};
+function L(s){ return CNUI?String(s).replace(/[\u4e00-\u9fff]/g,function(c){return T2S[c]||c;}):s; }
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function copyBtn(text){ return '<button type="button" class="secondary pp-copy" data-copy="'+esc(text)+'">📋 複製</button>'; }
-document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('.pp-copy'); if(!b) return; var t=b.getAttribute('data-copy'); var done=function(){ var o=b.textContent; b.textContent='✅ 已複製'; setTimeout(function(){b.textContent=o;},1500); };
+document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('.pp-copy'); if(!b) return; var t=b.getAttribute('data-copy'); var done=function(){ var o=b.textContent; b.textContent=L('✅ 已複製'); setTimeout(function(){b.textContent=o;},1500); };
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,function(){fb();}); else fb();
   function fb(){ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');done();}catch(_){} ta.remove(); } });
 var picks={};
-function runName(){ var v=$('ppname').value.trim(), out=$('ppnameout'); if(!v){ out.innerHTML='<p class="note">請輸入中文姓名，例如：陳大文</p>'; return; }
+function runName(){ var v=$('ppname').value.trim(), out=$('ppnameout'); if(!v){ out.innerHTML=L('<p class="note">請輸入中文姓名，例如：陳大文</p>'); return; }
   var sys=$('ppsys').value, mode=$('ppmode').value; var r=name(v,{sys:sys,mode:mode,picks:picks});
   var h='<p class="big" style="font-size:1.5rem;letter-spacing:.03em"><b>'+esc(r.text)+'</b> '+copyBtn(r.text)+'</p>';
   h+='<table class="tbl"><tr><th>欄位</th><th>中文</th><th>英文</th></tr><tr><td>姓（Surname）</td><td>'+esc(r.sur)+'</td><td>'+esc(r.S)+' '+copyBtn(r.S)+'</td></tr><tr><td>名（Given name）</td><td>'+esc(r.given)+'</td><td>'+esc(r.G)+' '+copyBtn(r.G)+'</td></tr></table>';
   if(r.poly.length){ h+='<p class="note">以下是<b>多音字</b>，請選你名字實際的唸法：</p>'; r.poly.forEach(function(p){ h+='<div class="f"><label>「'+esc(p.ch)+'」的讀音</label><select data-i="'+p.i+'" class="pppick">'+p.opts.map(function(o,j){return '<option value="'+j+'"'+(j===p.sel?' selected':'')+'>'+esc(o)+'（'+esc(p.py[j].replace('v','ü'))+'）</option>';}).join('')+'</select></div>'; }); }
   var all=['hy','ty','wg','m2'].map(function(s){return [s,name(v,{sys:s,mode:mode,picks:picks}).text];});
   h+='<details><summary>四種拼音比較</summary><table class="tbl">'+all.map(function(a){return '<tr><td>'+{hy:'漢語拼音',ty:'通用拼音',wg:'威妥瑪 WG',m2:'國音第二式'}[a[0]]+'</td><td><b>'+esc(a[1])+'</b></td><td>'+copyBtn(a[1])+'</td></tr>';}).join('')+'</table></details>';
-  out.innerHTML=h; }
+  out.innerHTML=L(h); }
 var roadsLoading=false;
-function runAddr(){ var v=$('ppaddr').value.trim(), out=$('ppaddrout'); if(!v){ out.innerHTML='<p class="note">請輸入中文地址，例如：臺北市大安區忠孝東路四段100巷5弄3號2樓之1</p>'; return; }
-  if(!G.PP_ROADS){ out.innerHTML='<p class="note">載入中華郵政路名資料中…</p>'; if(!roadsLoading){ roadsLoading=true; var sc=document.createElement('script'); var me=document.querySelector('script[src*="passport.js"]'); sc.src=(me?me.src.replace(/passport\.js.*/,''):'')+'passport-roads.js?v=1'; sc.onload=runAddr; sc.onerror=function(){ out.innerHTML='<p class="note">路名資料載入失敗，請重新整理頁面。</p>'; }; document.head.appendChild(sc);} return; }
+function runAddr(){ var v=$('ppaddr').value.trim(), out=$('ppaddrout'); if(!v){ out.innerHTML=L('<p class="note">請輸入中文地址，例如：臺北市大安區忠孝東路四段100巷5弄3號2樓之1</p>'); return; }
+  if(!G.PP_ROADS){ out.innerHTML=L('<p class="note">載入中華郵政路名資料中…</p>'); if(!roadsLoading){ roadsLoading=true; var sc=document.createElement('script'); var me=document.querySelector('script[src*="passport.js"]'); sc.src=(me?me.src.replace(/passport\.js.*/,''):'')+'passport-roads.js?v=1'; sc.onload=runAddr; sc.onerror=function(){ out.innerHTML=L('<p class="note">路名資料載入失敗，請重新整理頁面。</p>'); }; document.head.appendChild(sc);} return; }
   var r=addr(v); var h='<p class="big" style="font-size:1.25rem"><b>'+esc(r.text)+'</b> '+copyBtn(r.text)+'</p>';
   if(r.warn.length) h+='<ul class="note">'+r.warn.map(function(w){return '<li>⚠️ '+esc(w)+'</li>';}).join('')+'</ul>';
   h+='<table class="tbl"><tr><th>中文</th><th>英文</th><th>說明</th></tr>'+r.parts.map(function(p){return '<tr><td>'+esc(p.zh)+'</td><td><b>'+esc(p.en)+'</b></td><td><small>'+esc(p.what)+'</small></td></tr>';}).join('')+'</table>';
   if(r.zip3) h+='<p class="note">此行政區郵遞區號前 3 碼為 <b>'+esc(r.zip3)+'</b>；完整 3+3 碼請到中華郵政查詢後加在地址開頭重新轉換（英文會放在縣市後面）。</p>';
-  out.innerHTML=h; }
+  out.innerHTML=L(h); }
 function init(){ if(!$('ppname')) return; ['ppname','ppsys','ppmode'].forEach(function(id){ $(id).addEventListener('input',function(){ if(id==='ppname') picks={}; runName(); }); $(id).addEventListener('change',runName); });
   $('ppnameout').addEventListener('change',function(e){ if(e.target.classList.contains('pppick')){ picks[e.target.getAttribute('data-i')]=+e.target.value; runName(); } });
   $('ppaddr').addEventListener('input',runAddr); document.querySelectorAll('[data-ppex]').forEach(function(b){ b.addEventListener('click',function(){ var t=b.getAttribute('data-ppex'), k=b.getAttribute('data-ppk'); $(k).value=t; picks={}; k==='ppname'?runName():runAddr(); }); });
